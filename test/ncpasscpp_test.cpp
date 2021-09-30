@@ -18,6 +18,7 @@
 
 #include <iostream>
 #include <sys/mman.h>
+#include <sys/prctl.h>
 #include <ServerCredentials.hpp>
 #include "getDbusIDPass.hpp"
 
@@ -32,6 +33,10 @@ int main(int argc, char** argv)
 
         return 1;
     }
+
+    // Disable access to this processes ram from non root users.
+    // This line needs to be commented out if you want to use a debugger.
+    prctl(PR_SET_DUMPABLE, false);
 
     // Lock all the memory used by this program in ram so that they will never be writen to disk.
     // DISCLAMER: this does not stop memory being writen to the disk during hybernation.
