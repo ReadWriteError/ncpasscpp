@@ -53,8 +53,8 @@ class NCPASSCPP_PUBLIC API_Implementor
 {
   private:
 
-    const std::shared_ptr<ServerCredentials>      _serverCredentials; ///< Holds the Nextcloud server this instance is tied to.
-    static std::vector<std::shared_ptr<API_Type>> s_allInstances;     ///< Contains all the instances currently existing of a certain API_Type.
+    const std::shared_ptr<ServerCredentials>      k_serverCredentials; ///< Holds the Nextcloud server this instance is tied to.
+    static std::vector<std::shared_ptr<API_Type>> s_allInstances;      ///< Contains all the instances currently existing of a certain API_Type.
 
 
   protected:

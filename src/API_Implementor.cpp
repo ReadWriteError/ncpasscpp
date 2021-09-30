@@ -27,7 +27,7 @@ namespace ncpass
 
 template <class API_Type>
 API_Implementor<API_Type>::API_Implementor(const std::shared_ptr<ServerCredentials>& serverCredentials) :
-    _serverCredentials(serverCredentials)
+    k_serverCredentials(serverCredentials)
 {
     BOOST_STATIC_ASSERT(boost::is_base_of<API_Implementor, API_Type>::value);
     s_allInstances.push_back(std::shared_ptr<API_Type>(static_cast<API_Type*>(this)));
@@ -36,7 +36,7 @@ API_Implementor<API_Type>::API_Implementor(const std::shared_ptr<ServerCredentia
 
 template <class API_Type>
 API_Implementor<API_Type>::API_Implementor(const API_Implementor& apiObject) :
-    API_Implementor<API_Type>(apiObject._serverCredentials)
+    API_Implementor<API_Type>(apiObject.k_serverCredentials)
 {}
 
 
