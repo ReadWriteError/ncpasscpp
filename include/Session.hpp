@@ -32,6 +32,7 @@
 #endif
 
 #include <memory>
+#include <string>
 #include <API_Implementor.hpp>
 #include <curlpp/Options.hpp>
 

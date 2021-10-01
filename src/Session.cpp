@@ -23,7 +23,7 @@ namespace ncpass
 
 
 Session::Session(const std::string& username, const std::string& serverRoot, const std::string& password) :
-    _Base(),
+    _Base("session"),
     k_apiURL("https://" + serverRoot + (serverRoot.back() != '/' ? "/" : "") + "apps/passwords/api/1.0/"),
     k_usrPasswd(username + ":" + password)
 {}

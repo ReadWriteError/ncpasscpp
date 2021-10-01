@@ -32,6 +32,7 @@
 #endif
 
 #include <memory>
+#include <string>
 #include <vector>
 
 namespace ncpass
@@ -58,6 +59,7 @@ class NCPASSCPP_PUBLIC API_Implementor
   private:
 
     const std::shared_ptr<Session> k_session;                     ///< Holds the Nextcloud server this instance is tied to.
+    const std::string k_apiPath;                                  ///< The path to append to the URL (example: ncpass::Passwords would be "password/").
     static std::vector<std::shared_ptr<API_Type>> s_allInstances; ///< Contains all the instances currently existing of a certain API_Type.
 
 
@@ -66,22 +68,28 @@ class NCPASSCPP_PUBLIC API_Implementor
     /**
      * @brief Constructor for providing the Nextcloud server's credentials.
      * @param session A shared_ptr to a ncpass::Session instance used as credentials for the Nextcloud server's API.
+     * @param apiPath The path to append to the URL (example: ncpass::Passwords would be "password").
      * @see ncpass::Session
+     * @see https://git.mdns.eu/nextcloud/passwords/wikis/Developers/Index
      */
-    API_Implementor(const std::shared_ptr<Session>& session);
+    API_Implementor(const std::shared_ptr<Session>& session, const std::string& apiPath);
 
     /**
      * @brief Constructor that obtains the ncpass::Session instance from another object.
      * @param apiObject An ncpass::API_Implementor object that will be used to obtain the ncpass::Session. This is done by copying the shared_ptr<ncpass::Session> within the object.
+     * @param apiPath The path to append to the URL (example: ncpass::Passwords would be "password").
      * @see ncpass::Session
+     * @see https://git.mdns.eu/nextcloud/passwords/wikis/Developers/Index
      */
-    API_Implementor(const API_Implementor& apiObject);
+    API_Implementor(const API_Implementor& apiObject, const std::string& apiPath);
 
     /**
      * @brief Constructor for ncpass::Session itself because it is also an API_Implementor.
+     * @param apiPath The path to append to the URL (example: ncpass::Passwords would be "password").
      * @see ncpass::Session
+     * @see https://git.mdns.eu/nextcloud/passwords/wikis/Developers/Index
      */
-    API_Implementor();
+    API_Implementor(const std::string& apiPath);
 
     /**
      * @brief Gets the shared pointer for the current instance.

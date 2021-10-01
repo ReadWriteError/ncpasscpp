@@ -28,11 +28,15 @@ template <class API_Type>
 std::vector<std::shared_ptr<API_Type>> API_Implementor<API_Type>::s_allInstances = std::vector<std::shared_ptr<API_Type>>();
 
 template <class API_Type>
-API_Implementor<API_Type>::API_Implementor(const std::shared_ptr<Session>& session) :
-    k_session(session)
+API_Implementor<API_Type>::API_Implementor(const std::shared_ptr<Session>& session, const std::string& apiPath) :
+    k_session(session),
+    k_apiPath(apiPath + "/")
 {
     // Compile time check that API_Type has a base of API_Implementor.
-    static_assert(std::is_base_of<API_Implementor, API_Type>::value, "API_Implementor<class API_Type> API_Type must be a child of API_Implementor. Check docs for how to use this.");
+    static_assert(
+      std::is_base_of<API_Implementor, API_Type>::value,
+      "API_Implementor<class API_Type> API_Type must be a child of API_Implementor. Check docs for how to use this."
+      );
 
     // Add new instance to the static vector. Designed to cause runtime error on object creation if you do the inheritance wrong.
     s_allInstances.push_back(std::shared_ptr<API_Type>(static_cast<API_Type*>(this)));
@@ -40,8 +44,8 @@ API_Implementor<API_Type>::API_Implementor(const std::shared_ptr<Session>& sessi
 
 
 template <class API_Type>
-API_Implementor<API_Type>::API_Implementor(const API_Implementor& apiObject) :
-    API_Implementor<API_Type>(apiObject.k_session)
+API_Implementor<API_Type>::API_Implementor(const API_Implementor& apiObject, const std::string& apiPath) :
+    API_Implementor<API_Type>(apiObject.k_session, apiPath)
 {}
 
 
@@ -60,8 +64,9 @@ std::vector<std::shared_ptr<API_Type>> API_Implementor<API_Type>::getAll() { ret
 
 // specific to the Session class
 template <>
-API_Implementor<Session>::API_Implementor() :
-    k_session(std::shared_ptr<Session>(static_cast<Session*>(this)))
+API_Implementor<Session>::API_Implementor(const std::string& apiPath) :
+    k_session(std::shared_ptr<Session>(static_cast<Session*>(this))),
+    k_apiPath(apiPath + "/")
 {
     // Add new instance to the static vector.
     s_allInstances.push_back(k_session);
