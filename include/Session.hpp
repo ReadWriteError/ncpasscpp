@@ -32,7 +32,7 @@
 #endif
 
 #include <memory>
-#include <string>
+#include <API_Implementor.hpp>
 #include <curlpp/Options.hpp>
 
 
@@ -43,13 +43,15 @@ namespace ncpass
 
 
 /**
- * @brief Authentication details for accessing a Nextcloud server.
- * Stores the login details and the URL for accessing a Nextcloud server.
+ * @brief Signifies the connection to a nextcloud server.
+ * Stores the login details, URL and handles all the encryption including E2EE. This is holds all you need to connect to the Nextcloud server.
  * @author Reed Krantz
  */
-class NCPASSCPP_PUBLIC ServerCredentials
+class NCPASSCPP_PUBLIC Session : public API_Implementor<Session>
 {
   private:
+
+    typedef API_Implementor<Session> _Base; ///< The base of this class.
 
     const std::string k_apiURL;                 ///< Base url to the api used to connect with the server (example: https://cloud.example.com/apps/passwords/api/1.0/).
     const curlpp::options::UserPwd k_usrPasswd; ///< User and password curl options used for authenticating with the api.
@@ -58,43 +60,51 @@ class NCPASSCPP_PUBLIC ServerCredentials
   protected:
 
     /**
-     * @brief Constructor for ServerCredentials.
+     * @brief Constructor for Session.
      * @param username The user to login to the nextcloud server as.
      * @param serverRoot The root URL of the server without https:// or a path unless necessary for your server (example: cloud.example.com).
      * @param password The password for your login. If you have Two-Factor Authentication enabled this must be an app password.
      */
-    ServerCredentials(const std::string& username, const std::string& serverRoot, const std::string& password);
+    Session(const std::string& username, const std::string& serverRoot, const std::string& password);
 
     /**
-     * @brief Constructor for ServerCredentials.
+     * @brief Constructor for Session.
      * @param federatedID The federated ID of the user to login as (example: user@cloud.example.com).
      * @param password The password for your login. If you have Two-Factor Authentication enabled this must be an app password.
      */
-    ServerCredentials(const std::string& federatedID, const std::string& password);
-                                                  
-                                                  
-  public:                                         
-                                                  
-    /**                                           
-     * @brief Creates a ServerCredentials object. 
+    Session(const std::string& federatedID, const std::string& password);
+
+
+  public:
+
+    /**
+     * @brief Creates a Session object.
      * @param username The user to login to the nextcloud server as.
      * @param serverRoot The root URL of the server without https:// or a path unless necessary for your server (example: cloud.example.com, example.com/cloud).
      * @param password The password for your login. If you have Two-Factor Authentication enabled this must be an app password.
-    * @return A shared pointer of the new ServerCredentials object. This shared pointer gets copied to every child instance of API_Implementor.
-     */                                           
-    static std::shared_ptr<ServerCredentials> create(const std::string& username, const std::string& serverRoot, const std::string& password);
-                                                  
-    /**                                           
-     * @brief Creates a ServerCredentials object. 
+     * @return A shared pointer of the new Session object. This shared pointer gets copied to every child instance of API_Implementor.
+     */
+    static std::shared_ptr<Session> create(const std::string& username, const std::string& serverRoot, const std::string& password);
+
+    /**
+     * @brief Creates a Session object.
      * @param federatedID The federated ID of the user to login as (example: user@cloud.example.com).
      * @param password The password for your login. If you have Two-Factor Authentication enabled this must be an app password.
-    * @return A shared pointer of the new ServerCredentials object. This shared pointer gets copied to every child instance of API_Implementor.
+     * @return A shared pointer of the new Session object. This shared pointer gets copied to every child instance of API_Implementor.
      */
-    static std::shared_ptr<ServerCredentials> create(const std::string& federatedID, const std::string& password);
-                                                  
-    template <class API_Type>                     
-    friend class API_Implementor;                 
-};                                                
-                                                  
-                                                  
+    static std::shared_ptr<Session> create(const std::string& federatedID, const std::string& password);
+
+    /**
+     * @brief Gets all of the instances of the requested class.
+     * Redeclare ncpass::API_Implementor::getAll() as public
+     * @return A vector containing all currently active instances.
+     * @see ncpass::API_Implementor::getAll()
+     */
+    static std::vector<std::shared_ptr<Session>> getAll();
+
+    template <class API_Type>
+    friend class API_Implementor;
+};
+
+
 }

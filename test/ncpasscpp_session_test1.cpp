@@ -19,7 +19,7 @@
 #include <iostream>
 #include <sys/mman.h>
 #include <sys/prctl.h>
-#include <ServerCredentials.hpp>
+#include <Session.hpp>
 #include "getDbusIDPass.hpp"
 
 using namespace std;
@@ -42,20 +42,20 @@ int main(int argc, char** argv)
     // DISCLAMER: this does not stop memory being writen to the disk during hybernation.
     mlockall(MCL_CURRENT | MCL_FUTURE | MCL_ONFAULT);
 
-    vector<shared_ptr<ncpass::ServerCredentials>> credentials; // A vector containing all of the nextcloud credentials available on this server.
+    vector<shared_ptr<ncpass::Session>> credentials; // A vector containing all of the nextcloud credentials available on this server.
 
 
     // How you get your "federatedIDs and passwords" or "usernames, rootServerURLs and passwords" is up to you and your application of this lib.
     // I'm getting this from the Gnome Online Accounts daemon over dbus.
-    // You can look in getDbusIDPass.hpp for how I do this (its kinda complicated).
+    // You can look in getDbusIDPass.hpp for how I do this (it's kinda complicated).
     for( array<string, 2> idPassArr : getDbusIDPass() ) // Gets a vector of string arrays containing { {federatedID, password}, {federatedID, password} } and loops through it.
-        credentials.push_back(ncpass::ServerCredentials::create(idPassArr[0], idPassArr[1]));
+        credentials.push_back(ncpass::Session::create(idPassArr[0], idPassArr[1]));
 
     bool didAllCredentialsPassVerification = true;
 
 
     // Loop through credentials and verify each one.
-    for( shared_ptr<ncpass::ServerCredentials> cred : credentials )
+    for( shared_ptr<ncpass::Session> cred : credentials )
     {
         bool didCredPassVerification = cred.use_count() == 1;
         //TODO: bool didCredPassVerification = cred->verify(); // Verify login details with the nextcloud server.

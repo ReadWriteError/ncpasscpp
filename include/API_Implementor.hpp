@@ -33,7 +33,6 @@
 
 #include <memory>
 #include <vector>
-#include <ServerCredentials.hpp>
 
 namespace ncpass
 {
@@ -41,11 +40,16 @@ namespace ncpass
 
 
 
+class Session;
+
+
+
+
 /**
  * @brief Class used for API calls to the Nextcloud server.
- * Abstract class that needs to be inherited to provide access to the Nextcloud server's API. This is because this class is the **only** class that can access ncpass::ServerCredentials.
+ * Abstract class that needs to be inherited to provide access to the Nextcloud server's API. This is because this class is the **only** class that can access ncpass::Session.
  * @tparam API_Type The derived class you are creating.
- * @see ServerCredentials
+ * @see ncpass::Session
  * @author Reed Krantz
  */
 template <class API_Type>
@@ -53,34 +57,37 @@ class NCPASSCPP_PUBLIC API_Implementor
 {
   private:
 
-    const std::shared_ptr<ServerCredentials>      k_serverCredentials; ///< Holds the Nextcloud server this instance is tied to.
-    static std::vector<std::shared_ptr<API_Type>> s_allInstances;      ///< Contains all the instances currently existing of a certain API_Type.
+    const std::shared_ptr<Session> k_session;                     ///< Holds the Nextcloud server this instance is tied to.
+    static std::vector<std::shared_ptr<API_Type>> s_allInstances; ///< Contains all the instances currently existing of a certain API_Type.
 
 
   protected:
 
     /**
      * @brief Constructor for providing the Nextcloud server's credentials.
-     * @param serverCredentials A shared_ptr to a ncpass::ServerCredentials instance used as credentials for the Nextcloud server's API.
-     * @see ServerCredentials
+     * @param session A shared_ptr to a ncpass::Session instance used as credentials for the Nextcloud server's API.
+     * @see ncpass::Session
      */
-    API_Implementor(const std::shared_ptr<ServerCredentials>& serverCredentials);
+    API_Implementor(const std::shared_ptr<Session>& session);
 
     /**
-     * @brief Constructor that obtains the ncpass::ServerCredentials instance from another object.
-     * @param apiObject An ncpass::API_Implementor object that will be used to obtain the ncpass::ServerCredentials. This is done by copying the shared_ptr<ncpass::ServerCredentials> within the object.
-     * @see ServerCredentials
+     * @brief Constructor that obtains the ncpass::Session instance from another object.
+     * @param apiObject An ncpass::API_Implementor object that will be used to obtain the ncpass::Session. This is done by copying the shared_ptr<ncpass::Session> within the object.
+     * @see ncpass::Session
      */
     API_Implementor(const API_Implementor& apiObject);
+
+    /**
+     * @brief Constructor for ncpass::Session itself because it is also an API_Implementor.
+     * @see ncpass::Session
+     */
+    API_Implementor();
 
     /**
      * @brief Gets the shared pointer for the current instance.
      * @return A copy of the shared pointer for the current instance.
      */
     std::shared_ptr<API_Type> getSharedPtr();
-
-
-  public:
 
     /**
      * @brief Gets all of the instances of the requested class.

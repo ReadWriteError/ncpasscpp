@@ -19,6 +19,7 @@
 #include <API_Implementor.hpp>
 #include <boost/static_assert.hpp>
 #include <boost/type_traits/is_base_of.hpp>
+#include <Session.hpp>
 
 
 namespace ncpass
@@ -26,17 +27,23 @@ namespace ncpass
 
 
 template <class API_Type>
-API_Implementor<API_Type>::API_Implementor(const std::shared_ptr<ServerCredentials>& serverCredentials) :
-    k_serverCredentials(serverCredentials)
+std::vector<std::shared_ptr<API_Type>> API_Implementor<API_Type>::s_allInstances = std::vector<std::shared_ptr<API_Type>>();
+
+template <class API_Type>
+API_Implementor<API_Type>::API_Implementor(const std::shared_ptr<Session>& session) :
+    k_session(session)
 {
+    // Compile time check that API_Type has a base of API_Implementor.
     BOOST_STATIC_ASSERT(boost::is_base_of<API_Implementor, API_Type>::value);
+
+    // Add new instance to the static vector. Designed to cause runtime error on object creation if you do the inheritance wrong.
     s_allInstances.push_back(std::shared_ptr<API_Type>(static_cast<API_Type*>(this)));
 }
 
 
 template <class API_Type>
 API_Implementor<API_Type>::API_Implementor(const API_Implementor& apiObject) :
-    API_Implementor<API_Type>(apiObject.k_serverCredentials)
+    API_Implementor<API_Type>(apiObject.k_session)
 {}
 
 
@@ -52,6 +59,15 @@ std::shared_ptr<API_Type> API_Implementor<API_Type>::getSharedPtr()
 
 template <class API_Type>
 std::vector<std::shared_ptr<API_Type>> API_Implementor<API_Type>::getAll() { return s_allInstances; }
+
+// specific to the Session class
+template <>
+API_Implementor<Session>::API_Implementor() :
+    k_session(std::shared_ptr<Session>(static_cast<Session*>(this)))
+{
+    // Add new instance to the static vector.
+    s_allInstances.push_back(k_session);
+}
 
 
 }

@@ -16,32 +16,33 @@
  * along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
 
-#include <ServerCredentials.hpp>
+#include <Session.hpp>
 
 namespace ncpass
 {
 
 
-ServerCredentials::ServerCredentials(const std::string& username, const std::string& serverRoot, const std::string& password) :
+Session::Session(const std::string& username, const std::string& serverRoot, const std::string& password) :
+    _Base(),
     k_apiURL("https://" + serverRoot + (serverRoot.back() != '/' ? "/" : "") + "apps/passwords/api/1.0/"),
     k_usrPasswd(username + ":" + password)
 {}
 
 
-ServerCredentials::ServerCredentials(const std::string& federatedID, const std::string& password) :
-    ServerCredentials(federatedID.substr(0, federatedID.find('@')), federatedID.substr(federatedID.find('@') + 1, federatedID.size()), password)
+Session::Session(const std::string& federatedID, const std::string& password) :
+    Session(federatedID.substr(0, federatedID.find('@')), federatedID.substr(federatedID.find('@') + 1, federatedID.size()), password)
 {}
 
 
-std::shared_ptr<ServerCredentials> ServerCredentials::create(const std::string& username, const std::string& serverRoot, const std::string& password)
+std::shared_ptr<Session> Session::create(const std::string& username, const std::string& serverRoot, const std::string& password)
 {
-    return std::shared_ptr<ServerCredentials>(new ServerCredentials(serverRoot, username, password));
+    return std::shared_ptr<Session>(new Session(serverRoot, username, password));
 }
 
 
-std::shared_ptr<ServerCredentials> ServerCredentials::create(const std::string& federatedID, const std::string& password)
+std::shared_ptr<Session> Session::create(const std::string& federatedID, const std::string& password)
 {                                                   
-    return std::shared_ptr<ServerCredentials>(new ServerCredentials(federatedID, password));
+    return std::shared_ptr<Session>(new Session(federatedID, password));
 }                                                   
                                                     
                                                     

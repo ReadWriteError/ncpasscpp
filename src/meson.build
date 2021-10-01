@@ -1,4 +1,4 @@
-ncpasscpp_sources = ['API_Implementor.cpp', 'ServerCredentials.cpp']
+ncpasscpp_sources = ['API_Implementor.cpp', 'Session.cpp']
 
 ncpasscpp = shared_library(
   'ncpasscpp',
