@@ -48,6 +48,20 @@ API_Implementor<API_Type>::API_Implementor(const API_Implementor& apiObject, con
     API_Implementor<API_Type>(apiObject.k_session, apiPath)
 {}
 
+// Constructor specific to the Session class.
+template <>
+API_Implementor<Session>::API_Implementor(const std::string& apiPath) :
+    k_session(std::shared_ptr<Session>(static_cast<Session*>(this))),
+    k_apiPath(apiPath + "/")
+{
+    // Add new instance to the static vector.
+    s_allInstances.push_back(k_session);
+}
+
+
+template <class API_Type>
+std::vector<std::shared_ptr<API_Type>> API_Implementor<API_Type>::getAll() { return s_allInstances; }
+
 
 template <class API_Type>
 std::shared_ptr<API_Type> API_Implementor<API_Type>::getSharedPtr()
@@ -56,20 +70,6 @@ std::shared_ptr<API_Type> API_Implementor<API_Type>::getSharedPtr()
         if( ptr.get() == this )
             return ptr;
 
-}
-
-
-template <class API_Type>
-std::vector<std::shared_ptr<API_Type>> API_Implementor<API_Type>::getAll() { return s_allInstances; }
-
-// specific to the Session class
-template <>
-API_Implementor<Session>::API_Implementor(const std::string& apiPath) :
-    k_session(std::shared_ptr<Session>(static_cast<Session*>(this))),
-    k_apiPath(apiPath + "/")
-{
-    // Add new instance to the static vector.
-    s_allInstances.push_back(k_session);
 }
 
 

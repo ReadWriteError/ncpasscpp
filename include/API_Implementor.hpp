@@ -92,16 +92,16 @@ class NCPASSCPP_PUBLIC API_Implementor
     API_Implementor(const std::string& apiPath);
 
     /**
-     * @brief Gets the shared pointer for the current instance.
-     * @return A copy of the shared pointer for the current instance.
-     */
-    std::shared_ptr<API_Type> getSharedPtr();
-
-    /**
      * @brief Gets all of the instances of the requested class.
      * @return A vector containing all currently active instances.
      */
     static std::vector<std::shared_ptr<API_Type>> getAll();
+
+    /**
+     * @brief Gets the shared pointer for the current instance.
+     * @return A copy of the shared pointer for the current instance.
+     */
+    std::shared_ptr<API_Type> getSharedPtr();
 };
 
 
