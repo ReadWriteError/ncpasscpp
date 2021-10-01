@@ -10,7 +10,6 @@ lib_args = ['-DBUILDING_NCPASSCPP']
 #add_global_arguments('-DSOME_TOKEN=value', language : 'cpp')
 
 curlpp_dep = dependency('curlpp', version: '>= 0.8.1')
-boost_dep = dependency('boost', version: '>= 1.74.0')
 
 inc = include_directories('include')
 

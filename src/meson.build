@@ -5,6 +5,6 @@ ncpasscpp = shared_library(
   ncpasscpp_sources,
   include_directories : inc,
   cpp_args : lib_args,
-  dependencies : [curlpp_dep, boost_dep],
+  dependencies : [curlpp_dep],
   install : true
 )
