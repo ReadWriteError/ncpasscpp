@@ -73,16 +73,6 @@ std::vector<std::shared_ptr<API_Type>> API_Implementor<API_Type>::getAllLocal() 
 
 
 template <class API_Type>
-std::shared_ptr<API_Type> API_Implementor<API_Type>::getSharedPtr()
-{
-    for( std::shared_ptr<API_Type> ptr : s_allInstances )
-        if( ptr.get() == this )
-            return ptr;
-
-}
-
-
-template <class API_Type>
 nlohmann::json API_Implementor<API_Type>::ncPOST(const std::string& apiAction, const nlohmann::json& apiArgs)
 {
     curlpp::Cleanup cleaner;

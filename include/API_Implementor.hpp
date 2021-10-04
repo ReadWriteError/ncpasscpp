@@ -55,7 +55,7 @@ class Session;
  * @author Reed Krantz
  */
 template <class API_Type>
-class NCPASSCPP_PUBLIC API_Implementor
+class NCPASSCPP_PUBLIC API_Implementor : public std::enable_shared_from_this<API_Type>
 {
   private:
 
@@ -97,12 +97,6 @@ class NCPASSCPP_PUBLIC API_Implementor
      * @return A vector containing all currently active instances.
      */
     static std::vector<std::shared_ptr<API_Type>> getAllLocal();
-
-    /**
-     * @brief Gets the shared pointer for the current instance.
-     * @return A copy of the shared pointer for the current instance.
-     */
-    std::shared_ptr<API_Type> getSharedPtr();
 
     /**
      * @brief Make a curl POST request.

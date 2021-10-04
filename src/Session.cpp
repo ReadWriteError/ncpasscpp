@@ -47,7 +47,7 @@ std::shared_ptr<Session> Session::create(const std::string& username, const std:
     Session* toReturn = new Session(username, serverRoot, password);
 
 
-    return toReturn->getSharedPtr();
+    return toReturn->shared_from_this();
 }
 
 

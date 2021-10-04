@@ -37,7 +37,7 @@ std::shared_ptr<Password> Password::create(const std::shared_ptr<Session>& sessi
     Password* toReturn = new Password(session);
 
 
-    return toReturn->getSharedPtr();
+    return toReturn->shared_from_this();
 }
 
 
@@ -55,7 +55,7 @@ std::shared_ptr<Password> Password::get(const std::shared_ptr<Session>& session,
     Password* toReturn = new Password(session, json);
 
 
-    return toReturn->getSharedPtr();
+    return toReturn->shared_from_this();
 }
 
 
