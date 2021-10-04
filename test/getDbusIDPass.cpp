@@ -16,14 +16,16 @@
  * along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
 
+#include "dbus-c++/types.h"
 #include <array>
+#include <cstring>
 #include <string>
 #include <vector>
 #include <dbus-c++/dbus.h>
 using namespace std;
 
 
-inline std::vector<std::array<std::string, 2>> getDbusIDPass()
+std::vector<std::array<std::string, 2>> getDbusIDPass()
 {
     std::vector<std::string> accountIDs; // Vector for strings of accounts in Gnome Online Accounts (GOA).
 
@@ -67,7 +69,7 @@ inline std::vector<std::array<std::string, 2>> getDbusIDPass()
         DBus::MessageIter msgItr = connection.send_blocking(msgProvider).reader(); // Make the ProviderName call to dbus and get the result as a message iterator.
 
         // Read the message iterator and delete the account if the result is not Nextcloud.
-        if( DBus::Variant(msgItr).reader().get_string() == (std::string)"Nextcloud" )
+        if( strcmp(DBus::Variant(msgItr).reader().get_string(), "Nextcloud") )
             accountIDs.erase(accountIDs.cbegin() + i--);  // Delete the current element and decrease i by 1 (so that the for loop properly selects the next account when it runs i++).
     }
 

@@ -10,6 +10,7 @@ lib_args = ['-DBUILDING_NCPASSCPP']
 #add_global_arguments('-DSOME_TOKEN=value', language : 'cpp')
 
 curlpp_dep = dependency('curlpp', version: '>= 0.8.1')
+nlohmann_json_dep = dependency('nlohmann_json', version: '>= 3.9.1')
 
 inc = include_directories('include')
 

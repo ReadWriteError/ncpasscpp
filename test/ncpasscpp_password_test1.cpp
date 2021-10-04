@@ -17,6 +17,7 @@
  */
 
 #include <iostream>
+#include <Password.hpp>
 #include <sys/mman.h>
 #include <sys/prctl.h>
 #include <Session.hpp>
@@ -42,29 +43,21 @@ int main(int argc, char** argv)
     // DISCLAMER: this does not stop memory being writen to the disk during hybernation.
     mlockall(MCL_CURRENT | MCL_FUTURE | MCL_ONFAULT);
 
-    vector<shared_ptr<ncpass::Session>> credentials; // A vector containing all of the nextcloud credentials available on this server.
+    vector<shared_ptr<ncpass::Session>> sessions; // A vector containing all of the nextcloud sessions available on this server.
 
 
     // How you get your "federatedIDs and passwords" or "usernames, rootServerURLs and passwords" is up to you and your application of this lib.
     // I'm getting this from the Gnome Online Accounts daemon over dbus.
-    // You can look in getDbusIDPass.hpp for how I do this (it's kinda complicated).
+    // You can look in getDbusIDPass.hpp for how I do this (its kinda complicated).
     for( array<string, 2> idPassArr : getDbusIDPass() ) // Gets a vector of string arrays containing { {federatedID, password}, {federatedID, password} } and loops through it.
-        credentials.push_back(ncpass::Session::create(idPassArr[0], idPassArr[1]));
+        sessions.push_back(ncpass::Session::create(idPassArr[0], idPassArr[1]));
 
-    bool didAllCredentialsPassVerification = true;
+    cout << "federated ID: " << sessions[0]->getFederatedID() << endl;
+
+    auto password = ncpass::Password::get(sessions[0], "uuid");
 
 
-    // Loop through credentials and verify each one.
-    for( shared_ptr<ncpass::Session> cred : credentials )
-    {
-        bool didCredPassVerification = cred.use_count() >= 1;
-        //TODO: bool didCredPassVerification = cred->verify(); // Verify login details with the nextcloud server.
+    //password->pull();
 
-        if( didAllCredentialsPassVerification )
-            didAllCredentialsPassVerification = didCredPassVerification;
-
-        cout << cred->getFederatedID() << " Pass? " << didCredPassVerification << endl; // Print the federated ID and whether it passed the test.
-    }
-
-    return !didAllCredentialsPassVerification;
+    return 0;
 }

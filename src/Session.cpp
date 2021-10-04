@@ -17,6 +17,7 @@
  */
 
 #include <Session.hpp>
+#include "API_Implementor.cpp"
 
 namespace ncpass
 {
@@ -25,6 +26,7 @@ namespace ncpass
 Session::Session(const std::string& username, const std::string& serverRoot, const std::string& password) :
     _Base("session"),
     k_apiURL("https://" + serverRoot + (serverRoot.back() != '/' ? "/" : "") + "apps/passwords/api/1.0/"),
+    k_federatedID(username + "@" + (serverRoot.back() != '/' ? serverRoot : serverRoot.substr(0, serverRoot.size() - 1))),
     k_usrPasswd(username + ":" + password)
 {}
 
@@ -36,14 +38,29 @@ Session::Session(const std::string& federatedID, const std::string& password) :
 
 std::shared_ptr<Session> Session::create(const std::string& username, const std::string& serverRoot, const std::string& password)
 {
-    return std::shared_ptr<Session>(new Session(serverRoot, username, password));
+    std::string federatedID = username + "@" + (serverRoot.back() != '/' ? serverRoot : serverRoot.substr(0, serverRoot.size() - 1));
+
+      for( auto session : getAll() )
+        if( federatedID == session->getFederatedID())
+            return session;
+
+    Session* toReturn = new Session(username, serverRoot, password);
+
+
+    return toReturn->getSharedPtr();
 }
 
 
 std::shared_ptr<Session> Session::create(const std::string& federatedID, const std::string& password)
-{                                                   
-    return std::shared_ptr<Session>(new Session(federatedID, password));
-}                                                   
-                                                    
-                                                    
-}                                                   
+{
+    return create(federatedID.substr(0, federatedID.find('@')), federatedID.substr(federatedID.find('@') + 1, federatedID.size()), password);
+}
+
+
+std::vector<std::shared_ptr<Session>> Session::getAll() { return _Base::getAll(); }
+
+
+std::string Session::getFederatedID() const { return k_federatedID; }
+
+
+}

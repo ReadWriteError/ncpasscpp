@@ -7,4 +7,12 @@ session_test1 = executable(
   link_with : ncpasscpp
 )
 
+password_test1 = executable(
+  'password_test1', 'ncpasscpp_password_test1.cpp',
+  include_directories : inc,
+  dependencies : [dbus_cpp_dep, curlpp_dep],
+  link_with : ncpasscpp
+)
+
 test('ncpasscpp test', session_test1)
+test('ncpasscpp test', password_test1)

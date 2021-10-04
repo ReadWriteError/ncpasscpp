@@ -16,7 +16,15 @@
  * along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
 
+#include <sstream>
+#include <string>
+#include <type_traits>
 #include <API_Implementor.hpp>
+#include <curlpp/cURLpp.hpp>
+#include <curlpp/Easy.hpp>
+#include <curlpp/Form.hpp>
+#include <curlpp/Options.hpp>
+#include <nlohmann/json.hpp>
 #include <Session.hpp>
 
 
@@ -49,11 +57,12 @@ API_Implementor<API_Type>::API_Implementor(const API_Implementor& apiObject, con
 {}
 
 // Constructor specific to the Session class.
-template <>
-API_Implementor<Session>::API_Implementor(const std::string& apiPath) :
-    k_session(std::shared_ptr<Session>(static_cast<Session*>(this))),
+template <class API_Type>
+API_Implementor<API_Type>::API_Implementor(const std::string& apiPath) :
+    k_session(std::shared_ptr<API_Type>(static_cast<API_Type*>(this))),
     k_apiPath(apiPath + "/")
 {
+    static_assert(std::is_base_of<Session, API_Type>::value, "API_Implementor(const std::string& apiPath) can only be called from Session");
     // Add new instance to the static vector.
     s_allInstances.push_back(k_session);
 }
@@ -70,6 +79,38 @@ std::shared_ptr<API_Type> API_Implementor<API_Type>::getSharedPtr()
         if( ptr.get() == this )
             return ptr;
 
+}
+
+
+template <class API_Type>
+template <unsigned int N>
+nlohmann::json API_Implementor<API_Type>::ncPOST(const std::string& apiAction, const std::string (& apiArgs)[N][2])
+{
+    curlpp::Cleanup cleaner;
+    curlpp::Easy    request;
+
+    nlohmann::json json;
+
+
+    request.setOpt(new curlpp::options::Url(k_session->k_apiURL + k_apiPath + apiAction));
+    request.setOpt(k_session->k_usrPasswd);
+
+    curlpp::Forms formParts;
+
+
+    for( unsigned int i = 0; i < N; i++ )
+        formParts.push_back(new curlpp::FormParts::Content(apiArgs[i][0], apiArgs[i][1]));
+
+    request.setOpt(new curlpp::options::HttpPost(formParts));
+
+    std::stringstream output;
+
+
+    output << request;
+
+    json = nlohmann::json::parse(output.str());
+
+    return json;
 }
 
 
