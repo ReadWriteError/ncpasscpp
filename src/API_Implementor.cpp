@@ -83,8 +83,7 @@ std::shared_ptr<API_Type> API_Implementor<API_Type>::getSharedPtr()
 
 
 template <class API_Type>
-template <unsigned int N>
-nlohmann::json API_Implementor<API_Type>::ncPOST(const std::string& apiAction, const std::string (& apiArgs)[N][2])
+nlohmann::json API_Implementor<API_Type>::ncPOST(const std::string& apiAction, const nlohmann::json& apiArgs)
 {
     curlpp::Cleanup cleaner;
     curlpp::Easy    request;
@@ -98,8 +97,8 @@ nlohmann::json API_Implementor<API_Type>::ncPOST(const std::string& apiAction, c
     curlpp::Forms formParts;
 
 
-    for( unsigned int i = 0; i < N; i++ )
-        formParts.push_back(new curlpp::FormParts::Content(apiArgs[i][0], apiArgs[i][1]));
+    for( auto& [key, value] : apiArgs.items() )
+        formParts.push_back(new curlpp::FormParts::Content(key, value));
 
     request.setOpt(new curlpp::options::HttpPost(formParts));
 

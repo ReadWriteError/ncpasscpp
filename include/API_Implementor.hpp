@@ -107,11 +107,10 @@ class NCPASSCPP_PUBLIC API_Implementor
     /**
      * @brief Make a curl POST request.
      * @param apiAction The final part of the API URL.
-     * @param apiArgs The arguments for the POST request. The layout for the array is like this { {"arg1", "value"}, {"arg2", "value"} }
+     * @param apiArgs The arguments for the POST request in JSON. example JSON: { {"arg1", "value"}, {"arg2", "value"} }
      * @return The returning JSON of the call.
      */
-    template <unsigned int N>
-    nlohmann::json ncPOST(const std::string& apiAction, const std::string (& apiArgs)[N][2]);
+    nlohmann::json ncPOST(const std::string& apiAction, const nlohmann::json& apiArgs);
 };
 
 
