@@ -25,29 +25,11 @@ namespace ncpass
 {
 
 
-Password::Password(const std::shared_ptr<Session>& session, const nlohmann::json& password_json) : _Base(session, "password"), _lastSync(std::chrono::system_clock::now())
-{
-    setFromJSON(password_json);
-}
-
-
-void Password::setFromJSON(nlohmann::json password_json)
-{
-    std::map<std::string, std::string*> variableMaps;
-
-
-    if( _id.empty() )
-        variableMaps["id"] = &_id;
-
-    variableMaps["label"]    = &_label;
-    variableMaps["username"] = &_username;
-    variableMaps["password"] = &_password;
-
-    for( nlohmann::json::iterator it = password_json.begin(); it != password_json.end(); it++ )
-        if( variableMaps.find(it.key()) != variableMaps.end() )
-            *variableMaps[it.key()] = (std::string)it.value();
-
-}
+Password::Password(const std::shared_ptr<Session>& session, const nlohmann::json& password_json) :
+    _Base(session, "password"),
+    _lastSync(std::chrono::system_clock::now()),
+    _json(password_json)
+{}
 
 
 std::shared_ptr<Password> Password::create(const std::shared_ptr<Session>& session)
@@ -61,8 +43,8 @@ std::shared_ptr<Password> Password::create(const std::shared_ptr<Session>& sessi
 
 std::shared_ptr<Password> Password::get(const std::shared_ptr<Session>& session, const std::string& id)
 {
-    for( auto password : getAll() )
-        if( password->_id == id )
+    for( auto password : getAllLocal() )
+        if( password->getID() == id )
             return password;
 
     nlohmann::json json;
@@ -77,12 +59,20 @@ std::shared_ptr<Password> Password::get(const std::shared_ptr<Session>& session,
 }
 
 
-void Password::sync() {}
+std::vector<std::shared_ptr<Password>> Password::getAllLocal() { return _Base::getAllLocal(); }
+
+
+void Password::sync() { pull(); }
 
 
 void Password::pull()
 {
-    setFromJSON(ncPOST("show", { { "id", _id } }));
+    nlohmann::json json = ncPOST("show", { { "id", getID() } });
+
+
+    if( json.value("id", "") == _json.at("id") ) // Will not throw if new json doesn't have an ID but will if current json doesn't.
+        _json = json;
+
     _lastSync = std::chrono::system_clock::now();
 }
 
@@ -90,35 +80,62 @@ void Password::pull()
 void Password::push() const {}
 
 
-std::string Password::getID() const { return _id; }
+std::string Password::getID() const
+{
+    return _json.at("id");
+}
 
 
-std::string Password::getLabel() const { return _label; }
+std::string Password::getLabel()
+{
+    if( !_json.contains("label") )
+        sync();
+        //TODO: waitFor("label");
+
+
+    return _json.at("label");
+}
 
 
 void Password::setLabel(const std::string& label)
 {
-    _label = label;
+    _json["label"] = label;
     push();
 }
 
 
-std::string Password::getUsername() const { return _username; }
+std::string Password::getUsername()
+{
+    if( !_json.contains("username") )
+        sync();
+        //TODO: waitFor("username");
+
+
+    return _json.at("username");
+}
 
 
 void Password::setUsername(const std::string& username)
 {
-    _username = username;
+    _json["username"] = username;
     push();
 }
 
 
-std::string Password::getPassword() const { return _password; }
+std::string Password::getPassword()
+{
+    if( !_json.contains("password") )
+        sync();
+        //TODO: waitFor("password");
+
+
+    return _json.at("password");
+}
 
 
 void Password::setPassword(const std::string& password)
 {
-    _password = password;
+    _json["password"] = password;
     push();
 }
 

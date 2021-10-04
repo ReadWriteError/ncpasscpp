@@ -93,10 +93,10 @@ class NCPASSCPP_PUBLIC API_Implementor
     API_Implementor(const std::string& apiPath);
 
     /**
-     * @brief Gets all of the instances of the requested class.
+     * @brief Gets all of the instances of the derived class in API_Type.
      * @return A vector containing all currently active instances.
      */
-    static std::vector<std::shared_ptr<API_Type>> getAll();
+    static std::vector<std::shared_ptr<API_Type>> getAllLocal();
 
     /**
      * @brief Gets the shared pointer for the current instance.

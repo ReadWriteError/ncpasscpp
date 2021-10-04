@@ -40,7 +40,7 @@ std::shared_ptr<Session> Session::create(const std::string& username, const std:
 {
     std::string federatedID = username + "@" + (serverRoot.back() != '/' ? serverRoot : serverRoot.substr(0, serverRoot.size() - 1));
 
-      for( auto session : getAll() )
+      for( auto session : getAllLocal() )
         if( federatedID == session->getFederatedID())
             return session;
 
@@ -57,7 +57,7 @@ std::shared_ptr<Session> Session::create(const std::string& federatedID, const s
 }
 
 
-std::vector<std::shared_ptr<Session>> Session::getAll() { return _Base::getAll(); }
+std::vector<std::shared_ptr<Session>> Session::getAllLocal() { return _Base::getAllLocal(); }
 
 
 std::string Session::getFederatedID() const { return k_federatedID; }

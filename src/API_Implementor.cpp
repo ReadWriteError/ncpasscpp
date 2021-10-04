@@ -69,7 +69,7 @@ API_Implementor<API_Type>::API_Implementor(const std::string& apiPath) :
 
 
 template <class API_Type>
-std::vector<std::shared_ptr<API_Type>> API_Implementor<API_Type>::getAll() { return s_allInstances; }
+std::vector<std::shared_ptr<API_Type>> API_Implementor<API_Type>::getAllLocal() { return s_allInstances; }
 
 
 template <class API_Type>

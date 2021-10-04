@@ -55,11 +55,7 @@ class NCPASSCPP_PUBLIC Password : public API_Implementor<Password>
     typedef API_Implementor<Password> _Base; ///< The base of this class.
 
     std::chrono::system_clock::time_point _lastSync; ///< The last time this password was synced with the server.
-
-    std::string _id;       ///< The UUID of the password.
-    std::string _label;    ///< User defined label of the password.
-    std::string _username; ///< Username associated with the password.
-    std::string _password; ///< The actual password.
+    nlohmann::json _json;                            ///< The JSON for the password.
 
 
   protected:
@@ -71,12 +67,6 @@ class NCPASSCPP_PUBLIC Password : public API_Implementor<Password>
      * @see ncpass::Session
      */
     Password(const std::shared_ptr<Session>& session, const nlohmann::json& password_json=nlohmann::json::parse(R"({})"));
-
-    /**
-     * @brief Set JSON object's values to this password.
-     * @param json New JSON data.
-     */
-    void setFromJSON(nlohmann::json password_json);
 
 
   public:
@@ -97,6 +87,19 @@ class NCPASSCPP_PUBLIC Password : public API_Implementor<Password>
      * @see ncpass::Session
      */
     static std::shared_ptr<Password> get(const std::shared_ptr<Session>& session, const std::string& id);
+
+    /**
+     * @brief Gets all the passwords from the given Nextcloud server session asynchronously.
+     * @param session A shared_ptr to a ncpass::Session instance. Used as credentials for the Nextcloud server's API.
+     * @see ncpass::Session
+     */
+    static void getAll(const std::shared_ptr<Session>& session);
+
+    /**
+     * @brief Gets all of the instances of the Password class.
+     * @return A vector containing all currently active instances.
+     */
+    static std::vector<std::shared_ptr<Password>> getAllLocal();
 
     /**
      * @brief Pulls/pushes the most recent data from/to the server for this password only.
@@ -121,7 +124,7 @@ class NCPASSCPP_PUBLIC Password : public API_Implementor<Password>
     /**
      * @return User defined label of the password.
      */
-    std::string getLabel() const;
+    std::string getLabel();
 
     /**
      * @brief Set the passwords label asynchronously.
@@ -132,7 +135,7 @@ class NCPASSCPP_PUBLIC Password : public API_Implementor<Password>
     /**
      * @return Username associated with the password.
      */
-    std::string getUsername() const;
+    std::string getUsername();
 
     /**
      * @brief Set the passwords username asynchronously.
@@ -143,7 +146,7 @@ class NCPASSCPP_PUBLIC Password : public API_Implementor<Password>
     /**
      * @return The actual password.
      */
-    std::string getPassword() const;
+    std::string getPassword();
 
     /**
      * @brief Set the passwords password asynchronously.

@@ -97,12 +97,12 @@ class NCPASSCPP_PUBLIC Session : public API_Implementor<Session>
     static std::shared_ptr<Session> create(const std::string& federatedID, const std::string& password);
 
     /**
-     * @brief Gets all of the instances of the requested class.
-     * Redeclare ncpass::API_Implementor::getAll() as public
+     * @brief Gets all of the instances of the Session class.
+     * Redeclare ncpass::API_Implementor::getAllLocal() as public
      * @return A vector containing all currently active instances.
-     * @see ncpass::API_Implementor::getAll()
+     * @see ncpass::API_Implementor::getAllLocal()
      */
-    static std::vector<std::shared_ptr<Session>> getAll();
+    static std::vector<std::shared_ptr<Session>> getAllLocal();
 
     /**
      * @return The federated ID of the nextcloud user this Session is connected to.
