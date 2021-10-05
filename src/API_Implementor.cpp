@@ -57,7 +57,16 @@ API_Implementor<API_Type>::API_Implementor(const API_Implementor& apiObject, con
     k_session(apiObject.k_session),
     k_lockbox(apiObject.k_lockbox),
     k_apiPath(apiPath + "/")
-{}
+{
+    // Compile time check that API_Type has a base of API_Implementor.
+    static_assert(
+      std::is_base_of<API_Implementor, API_Type>::value,
+      "API_Implementor<class API_Type> API_Type must be a child of API_Implementor. Check docs for how to use this."
+      );
+
+    // Add new instance to the static vector. Designed to cause runtime error on object creation if you do the inheritance wrong.
+    s_allInstances.push_back(std::shared_ptr<API_Type>(static_cast<API_Type*>(this)));
+}
 
 
 template <class API_Type>
