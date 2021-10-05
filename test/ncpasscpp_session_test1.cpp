@@ -16,6 +16,10 @@
  * along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
 
+
+// Test for Session class
+// purpose: Create Session object and verify its federated ID.
+
 #include <iostream>
 #include <sys/mman.h>
 #include <sys/prctl.h>

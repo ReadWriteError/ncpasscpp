@@ -16,6 +16,10 @@
  * along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
 
+
+// Test for Password class
+// purpose: Read from all values of the password.
+
 #include <iostream>
 #include <Password.hpp>
 #include <sys/mman.h>
