@@ -14,5 +14,5 @@ password_test1 = executable(
   link_with : ncpasscpp
 )
 
-test('ncpasscpp test', session_test1)
-test('ncpasscpp test', password_test1)
+test('session test1', session_test1)
+test('password test1', password_test1)

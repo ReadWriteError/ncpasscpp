@@ -21,6 +21,7 @@
 #include <sys/prctl.h>
 #include <Session.hpp>
 #include "getDbusIDPass.cpp"
+#include "user-specific.hpp"
 
 using namespace std;
 
@@ -51,20 +52,25 @@ int main(int argc, char** argv)
     for( array<string, 2> idPassArr : getDbusIDPass() ) // Gets a vector of string arrays containing { {federatedID, password}, {federatedID, password} } and loops through it.
         credentials.push_back(ncpass::Session::create(idPassArr[0], idPassArr[1]));
 
-    bool didAllCredentialsPassVerification = true;
+    bool didAllPass = true;
 
 
     // Loop through credentials and verify each one.
     for( shared_ptr<ncpass::Session> cred : credentials )
     {
-        bool didCredPassVerification = cred.use_count() >= 1;
-        //TODO: bool didCredPassVerification = cred->verify(); // Verify login details with the nextcloud server.
+        bool didTestPass = false;
 
-        if( didAllCredentialsPassVerification )
-            didAllCredentialsPassVerification = didCredPassVerification;
+        for( string federatedID : TEST_SESSION_FEDERATEDIDS )
+        {
+            if( !didTestPass )
+                didTestPass = federatedID == cred->getFederatedID();
+        }
 
-        cout << cred->getFederatedID() << " Pass? " << didCredPassVerification << endl; // Print the federated ID and whether it passed the test.
+        if( didAllPass )
+            didAllPass = didTestPass;
+
+        cout << cred->getFederatedID() << " expected? " << (didTestPass ? "Yes" : "No") << endl; // Print the federated ID and whether it passed the test.
     }
 
-    return !didAllCredentialsPassVerification;
+    return !didAllPass;
 }

@@ -22,6 +22,7 @@
 #include <sys/prctl.h>
 #include <Session.hpp>
 #include "getDbusIDPass.cpp"
+#include "user-specific.hpp"
 
 using namespace std;
 
@@ -43,21 +44,39 @@ int main(int argc, char** argv)
     // DISCLAMER: this does not stop memory being writen to the disk during hybernation.
     mlockall(MCL_CURRENT | MCL_FUTURE | MCL_ONFAULT);
 
-    vector<shared_ptr<ncpass::Session>> sessions; // A vector containing all of the nextcloud sessions available on this server.
+    shared_ptr<ncpass::Session> session; // The Nextcloud Session to use for this test
 
 
     // How you get your "federatedIDs and passwords" or "usernames, rootServerURLs and passwords" is up to you and your application of this lib.
     // I'm getting this from the Gnome Online Accounts daemon over dbus.
     // You can look in getDbusIDPass.hpp for how I do this (its kinda complicated).
     for( array<string, 2> idPassArr : getDbusIDPass() ) // Gets a vector of string arrays containing { {federatedID, password}, {federatedID, password} } and loops through it.
-        sessions.push_back(ncpass::Session::create(idPassArr[0], idPassArr[1]));
+    {
+        if( idPassArr[0] == TEST_PASSWORD_ACCOUNT ) // If the federatedID of this account is equal to our user specific variable.
+            session = ncpass::Session::create(idPassArr[0], idPassArr[1]);  // Create the account Session.
+    }
 
-    cout << "federated ID: " << sessions[0]->getFederatedID() << endl;
+    auto password = ncpass::Password::get(session, TEST_PASSWORD_UUID); // Create our password.
 
-    auto password = ncpass::Password::get(sessions[0], "uuid");
+    bool didAllPass = true;
+    bool tests[]    = { // All the tests to perform.
+        password->getID() == TEST_PASSWORD_UUID,
+        password->getLabel() == TEST_PASSWORD_LABEL,
+        password->getUsername() == TEST_PASSWORD_USERNAME,
+        password->getPassword() == TEST_PASSWORD_PASSWORD
+    };
 
 
-    //password->pull();
+    // Print the status of those tests.
+    cout << "ID pass?       " << tests[0] << endl;
+    cout << "Label pass?    " << tests[1] << endl;
+    cout << "Username pass? " << tests[2] << endl;
+    cout << "Password pass? " << tests[3] << endl;
 
-    return 0;
+
+    // check if every test passed and change didAllPass if they didn't
+    for( unsigned int i = 0; didAllPass && i < sizeof(tests) / sizeof(tests[0]); i++ )
+        didAllPass = tests[i];
+
+    return !didAllPass;
 }

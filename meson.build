@@ -18,7 +18,7 @@ fs = import('fs')
 
 subdir('include')
 subdir('src')
-if fs.is_file('./.enable-tests')
+if fs.is_file('./test/user-specific.hpp')
   subdir('test')
 endif
 
