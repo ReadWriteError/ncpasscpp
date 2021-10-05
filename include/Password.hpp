@@ -52,8 +52,6 @@ class NCPASSCPP_PUBLIC Password : public API_Implementor<Password>
 {
   private:
 
-    typedef API_Implementor<Password> _Base; ///< The base of this class.
-
     std::chrono::system_clock::time_point _lastSync; ///< The last time this password was synced with the server.
     nlohmann::json _json;                            ///< The JSON for the password.
 

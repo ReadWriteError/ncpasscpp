@@ -93,6 +93,8 @@ class NCPASSCPP_PUBLIC API_Implementor : public std::enable_shared_from_this<API
 
   protected:
 
+    typedef API_Implementor<API_Type> _Base; ///< This class. used for child classes.
+
     /**
      * @brief Constructor for providing the Nextcloud server's credentials.
      * @param session A shared_ptr to a ncpass::Session instance used as credentials for the Nextcloud server's API.

@@ -52,8 +52,6 @@ class NCPASSCPP_PUBLIC Session : public API_Implementor<Session>
 {
   private:
 
-    typedef API_Implementor<Session> _Base; ///< The base of this class.
-
     const std::string k_apiURL;                 ///< Base url to the api used to connect with the server (example: https://cloud.example.com/apps/passwords/api/1.0/).
     const std::string k_federatedID;            ///< The federated ID of the Nextcloud session.
     const curlpp::options::UserPwd k_usrPasswd; ///< User and password curl options used for authenticating with the api.
