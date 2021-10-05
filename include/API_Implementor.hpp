@@ -59,7 +59,34 @@ class NCPASSCPP_PUBLIC API_Implementor : public std::enable_shared_from_this<API
 {
   private:
 
-    const std::shared_ptr<Session> k_session;                     ///< Holds the Nextcloud server this instance is tied to.
+    /**
+     * @brief Struct used to store the shared_ptr for the session.
+     * This Struct is never accessed only initialized.
+     * All required uses of the shared_ptr should use API_Implementor::k_session instead.
+     * The shared_ptr is only stored so it's life can be preserved.
+     * The reson this even exists is so ncpass::Session doesn't have to store a shared_ptr to itself as this is initialized to a nullptr in ncpass::Session dedicated constructor.
+     * @see ncpass::API_Implementor::k_session
+     */
+    struct Lockbox
+    {
+      private:
+
+        const std::shared_ptr<Session> k_session; ///< The life preserving shared_ptr for the object referenced by API_Implementor::k_session.
+
+
+      public:
+
+        Lockbox(const std::shared_ptr<Session>& session) : k_session(session)
+        {}
+
+
+        Lockbox(const Lockbox& lockbox) : k_session(lockbox.k_session)
+        {}
+    };
+
+
+    Session&          k_session;                                  ///< Holds the Nextcloud server this instance is tied to.
+    const Lockbox     k_lockbox;                                  ///< Simply used to extend the life of a shared_ptr owning k_session's object. @see ncpass::API_Implementor::Lockbox
     const std::string k_apiPath;                                  ///< The path to append to the URL (example: ncpass::Password would be "password/").
     static std::vector<std::shared_ptr<API_Type>> s_allInstances; ///< Contains all the instances currently existing of a certain API_Type.
 
@@ -77,15 +104,16 @@ class NCPASSCPP_PUBLIC API_Implementor : public std::enable_shared_from_this<API
 
     /**
      * @brief Constructor that obtains the ncpass::Session instance from another object.
-     * @param apiObject An ncpass::API_Implementor object that will be used to obtain the ncpass::Session. This is done by copying the shared_ptr<ncpass::Session> within the object.
+     * @param apiObject An ncpass::API_Implementor object that will be used to obtain the ncpass::Session. This is done by copying the lockbox and reference within the object.
      * @param apiPath The path to append to the URL (example: ncpass::Password would be "password").
      * @see ncpass::Session
+     * @see ncpass::API_Implementor::Lockbox
      * @see https://git.mdns.eu/nextcloud/passwords/wikis/Developers/Index
      */
     API_Implementor(const API_Implementor& apiObject, const std::string& apiPath);
 
     /**
-     * @brief Constructor for ncpass::Session itself because it is also an API_Implementor.
+     * @brief Dedicated constructor for ncpass::Session because it is also an API_Implementor.
      * @param apiPath The path to append to the URL (example: ncpass::Password would be "password").
      * @see ncpass::Session
      * @see https://git.mdns.eu/nextcloud/passwords/wikis/Developers/Index

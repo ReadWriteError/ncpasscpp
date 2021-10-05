@@ -37,7 +37,8 @@ std::vector<std::shared_ptr<API_Type>> API_Implementor<API_Type>::s_allInstances
 
 template <class API_Type>
 API_Implementor<API_Type>::API_Implementor(const std::shared_ptr<Session>& session, const std::string& apiPath) :
-    k_session(session),
+    k_session(static_cast<Session&>(*session)),
+    k_lockbox(session),
     k_apiPath(apiPath + "/")
 {
     // Compile time check that API_Type has a base of API_Implementor.
@@ -53,18 +54,22 @@ API_Implementor<API_Type>::API_Implementor(const std::shared_ptr<Session>& sessi
 
 template <class API_Type>
 API_Implementor<API_Type>::API_Implementor(const API_Implementor& apiObject, const std::string& apiPath) :
-    API_Implementor<API_Type>(apiObject.k_session, apiPath)
+    k_session(apiObject.k_session),
+    k_lockbox(apiObject.k_lockbox),
+    k_apiPath(apiPath + "/")
 {}
 
-// Constructor specific to the Session class.
+
 template <class API_Type>
 API_Implementor<API_Type>::API_Implementor(const std::string& apiPath) :
-    k_session(std::shared_ptr<API_Type>(static_cast<API_Type*>(this))),
+    k_session(static_cast<Session&>(*this)),
+    k_lockbox(std::shared_ptr<Session>()),
     k_apiPath(apiPath + "/")
 {
     static_assert(std::is_base_of<Session, API_Type>::value, "API_Implementor(const std::string& apiPath) can only be called from Session");
+
     // Add new instance to the static vector.
-    s_allInstances.push_back(k_session);
+    s_allInstances.push_back(std::shared_ptr<API_Type>(static_cast<API_Type*>(this)));
 }
 
 
@@ -81,13 +86,13 @@ nlohmann::json API_Implementor<API_Type>::ncPOST(const std::string& apiAction, c
     nlohmann::json json;
 
 
-    request.setOpt(new curlpp::options::Url(k_session->k_apiURL + k_apiPath + apiAction));
-    request.setOpt(k_session->k_usrPasswd);
+    request.setOpt(new curlpp::options::Url(k_session.k_apiURL + k_apiPath + apiAction));
+    request.setOpt(k_session.k_usrPasswd);
 
     curlpp::Forms formParts;
 
 
-    for( auto& [key, value] : apiArgs.items() )
+    for( auto&[key, value] : apiArgs.items() )
         formParts.push_back(new curlpp::FormParts::Content(key, value));
 
     request.setOpt(new curlpp::options::HttpPost(formParts));
