@@ -100,17 +100,17 @@ class NCPASSCPP_PUBLIC Password : public API_Implementor<Password>
     static std::vector<std::shared_ptr<Password>> getAllLocal();
 
     /**
-     * @brief Pulls/pushes the most recent data from/to the server for this password only.
+     * @brief Pulls/pushes the most recent data from/to the server.
      */
     void sync();
 
     /**
-     * @brief Pulls data from the server for this password only. This overides any data locally.
+     * @brief Pulls data from the server. This overides any data locally.
      */
     void pull();
 
     /**
-     * @brief Pushes data to the server for this password only. This overides any data in the server.
+     * @brief Pushes data to the server. This overides any data in the server.
      */
     void push() const;
 

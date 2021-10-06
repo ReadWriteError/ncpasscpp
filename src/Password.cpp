@@ -44,8 +44,10 @@ std::shared_ptr<Password> Password::create(const std::shared_ptr<Session>& sessi
 std::shared_ptr<Password> Password::get(const std::shared_ptr<Session>& session, const std::string& id)
 {
     for( auto password : getAllLocal() )
+    {
         if( password->getID() == id )
             return password;
+    }
 
     nlohmann::json json;
 
@@ -90,7 +92,6 @@ std::string Password::getLabel()
 {
     if( !_json.contains("label") )
         sync();
-        //TODO: waitFor("label");
 
 
     return _json.at("label");
@@ -108,7 +109,6 @@ std::string Password::getUsername()
 {
     if( !_json.contains("username") )
         sync();
-        //TODO: waitFor("username");
 
 
     return _json.at("username");
@@ -126,7 +126,6 @@ std::string Password::getPassword()
 {
     if( !_json.contains("password") )
         sync();
-        //TODO: waitFor("password");
 
 
     return _json.at("password");
