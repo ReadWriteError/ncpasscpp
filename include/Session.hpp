@@ -32,6 +32,7 @@
 #endif
 
 #include <memory>
+#include <shared_mutex>
 #include <string>
 #include <API_Implementor.hpp>
 #include <curlpp/Options.hpp>
@@ -52,9 +53,10 @@ class NCPASSCPP_PUBLIC Session : public API_Implementor<Session>
 {
   private:
 
-    const std::string k_apiURL;                 ///< Base url to the api used to connect with the server (example: https://cloud.example.com/apps/passwords/api/1.0/).
-    const std::string k_federatedID;            ///< The federated ID of the Nextcloud session.
-    const curlpp::options::UserPwd k_usrPasswd; ///< User and password curl options used for authenticating with the api.
+    const std::string         k_apiURL;      ///< Base url to the api used to connect with the server (example: https://cloud.example.com/apps/passwords/api/1.0/).
+    const std::string         k_federatedID; ///< The federated ID of the Nextcloud session.
+    curlpp::options::UserPwd  _usrPasswd;    ///< User and password curl options used for authenticating with the api.
+    mutable std::shared_mutex _mutex;        ///< Mutex for this Session instance.
 
 
   protected:
@@ -65,14 +67,12 @@ class NCPASSCPP_PUBLIC Session : public API_Implementor<Session>
      * @param serverRoot The root URL of the server without https:// or a path unless necessary for your server (example: cloud.example.com).
      * @param password The password for your login. If you have Two-Factor Authentication enabled this must be an app password.
      */
-    Session(const std::string& username, const std::string& serverRoot, const std::string& password);
-
-    /**
-     * @brief Constructor for Session.
-     * @param federatedID The federated ID of the user to login as (example: user@cloud.example.com).
-     * @param password The password for your login. If you have Two-Factor Authentication enabled this must be an app password.
-     */
-    Session(const std::string& federatedID, const std::string& password);
+    Session(
+      const std::string& username,
+      const std::string& serverRoot,
+      const std::string& password,
+      std::shared_ptr<internal::FuturePromise<void>> futProm=std::shared_ptr<internal::FuturePromise<void>>(new internal::FuturePromise<void>())
+      );
 
 
   public:

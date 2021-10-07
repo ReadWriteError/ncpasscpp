@@ -32,8 +32,10 @@
 #endif
 
 #include <memory>
+#include <shared_mutex>
 #include <string>
 #include <vector>
+#include <internal/FuturePromise.hpp>
 #include <nlohmann/json.hpp>
 
 namespace ncpass
@@ -42,7 +44,7 @@ namespace ncpass
 
 
 
-class Session;
+class Session; // forward declaration
 
 
 
@@ -82,13 +84,18 @@ class NCPASSCPP_PUBLIC API_Implementor : public std::enable_shared_from_this<API
 
         Lockbox(const Lockbox& lockbox) : k_session(lockbox.k_session)
         {}
-    };
+    } const k_lockbox;
 
+    const Session&    k_session; ///< Holds the Nextcloud server this instance is tied to.
+    const std::string k_apiPath; ///< The path to append to the URL (example: ncpass::Password would be "password/").
 
-    Session&          k_session;                                  ///< Holds the Nextcloud server this instance is tied to.
-    const Lockbox     k_lockbox;                                  ///< Simply used to extend the life of a shared_ptr owning k_session's object. @see ncpass::API_Implementor::Lockbox
-    const std::string k_apiPath;                                  ///< The path to append to the URL (example: ncpass::Password would be "password/").
     static std::vector<std::shared_ptr<API_Type>> s_allInstances; ///< Contains all the instances currently existing of a certain API_Type.
+    static std::shared_mutex s_mutex;                             ///< Mutex used for locking access to s_allInstances.
+
+    /**
+     * @brief Adds instance to Vector. Used in constructor.
+     */
+    void addToVector(std::shared_ptr<internal::FuturePromise<void>>& futProm);
 
 
   protected:
@@ -102,7 +109,11 @@ class NCPASSCPP_PUBLIC API_Implementor : public std::enable_shared_from_this<API
      * @see ncpass::Session
      * @see https://git.mdns.eu/nextcloud/passwords/wikis/Developers/Index
      */
-    API_Implementor(const std::shared_ptr<Session>& session, const std::string& apiPath);
+    API_Implementor(
+      const std::shared_ptr<Session>& session,
+      const std::string& apiPath,
+      std::shared_ptr<internal::FuturePromise<void>> futProm=std::shared_ptr<internal::FuturePromise<void>>(new internal::FuturePromise<void>())
+      );
 
     /**
      * @brief Constructor that obtains the ncpass::Session instance from another object.
@@ -112,7 +123,11 @@ class NCPASSCPP_PUBLIC API_Implementor : public std::enable_shared_from_this<API
      * @see ncpass::API_Implementor::Lockbox
      * @see https://git.mdns.eu/nextcloud/passwords/wikis/Developers/Index
      */
-    API_Implementor(const API_Implementor& apiObject, const std::string& apiPath);
+    API_Implementor(
+      const API_Implementor& apiObject,
+      const std::string& apiPath,
+      std::shared_ptr<internal::FuturePromise<void>> futProm=std::shared_ptr<internal::FuturePromise<void>>(new internal::FuturePromise<void>())
+      );
 
     /**
      * @brief Dedicated constructor for ncpass::Session because it is also an API_Implementor.
@@ -120,7 +135,10 @@ class NCPASSCPP_PUBLIC API_Implementor : public std::enable_shared_from_this<API
      * @see ncpass::Session
      * @see https://git.mdns.eu/nextcloud/passwords/wikis/Developers/Index
      */
-    API_Implementor(const std::string& apiPath);
+    API_Implementor(
+      const std::string& apiPath,
+      std::shared_ptr<internal::FuturePromise<void>> futProm=std::shared_ptr<internal::FuturePromise<void>>(new internal::FuturePromise<void>())
+      );
 
     /**
      * @brief Gets all of the instances of the derived class in API_Type.

@@ -23,26 +23,30 @@ namespace ncpass
 {
 
 
-Session::Session(const std::string& username, const std::string& serverRoot, const std::string& password) :
-    _Base("session"),
+Session::Session(const std::string& username, const std::string& serverRoot, const std::string& password, std::shared_ptr<internal::FuturePromise<void>> futProm) :
+    _Base("session", futProm),
     k_apiURL("https://" + serverRoot + (serverRoot.back() != '/' ? "/" : "") + "apps/passwords/api/1.0/"),
     k_federatedID(username + "@" + (serverRoot.back() != '/' ? serverRoot : serverRoot.substr(0, serverRoot.size() - 1))),
-    k_usrPasswd(username + ":" + password)
-{}
-
-
-Session::Session(const std::string& federatedID, const std::string& password) :
-    Session(federatedID.substr(0, federatedID.find('@')), federatedID.substr(federatedID.find('@') + 1, federatedID.size()), password)
-{}
+    _usrPasswd(username + ":" + password)
+{
+    if( futProm.use_count() == 1 )
+    {
+        std::cout << "session: releasing base lock" << std::endl;
+        futProm->getPromise().set_value();
+    }
+}
 
 
 std::shared_ptr<Session> Session::create(const std::string& username, const std::string& serverRoot, const std::string& password)
 {
     std::string federatedID = username + "@" + (serverRoot.back() != '/' ? serverRoot : serverRoot.substr(0, serverRoot.size() - 1));
 
-      for( auto session : getAllLocal() )
+
+    for( auto session : getAllLocal() )
+    {
         if( federatedID == session->getFederatedID())
             return session;
+    }
 
     Session* toReturn = new Session(username, serverRoot, password);
 

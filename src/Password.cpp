@@ -16,6 +16,10 @@
  * along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
 
+#include <future>
+#include <memory>
+#include <shared_mutex>
+#include <internal/FuturePromise.hpp>
 #include <nlohmann/json.hpp>
 #include <Password.hpp>
 #include "API_Implementor.cpp"
@@ -25,16 +29,44 @@ namespace ncpass
 {
 
 
-Password::Password(const std::shared_ptr<Session>& session, const nlohmann::json& password_json) :
-    _Base(session, "password"),
-    _lastSync(std::chrono::system_clock::now()),
+Password::Password(const std::shared_ptr<Session>& session, const nlohmann::json& password_json, std::shared_ptr<internal::FuturePromise<void>> futProm) :
+    _Base(session, "password", futProm),
     _json(password_json)
-{}
-
-
-std::shared_ptr<Password> Password::create(const std::shared_ptr<Session>& session)
 {
-    Password* toReturn = new Password(session);
+    if( _json.contains("id") )
+    {
+        pull();
+
+        if( futProm.use_count() == 1 )
+        {
+            std::cout << "password: releasing base lock" << std::endl;
+            futProm->getPromise().set_value();
+        }
+    }
+    else
+    {
+        assert(_json.contains("password") && _json.contains("label"));
+
+        std::unique_lock<std::shared_mutex> lock(_mutex);
+
+        if( futProm.use_count() == 1 )
+        {
+            std::cout << "password: releasing base lock" << std::endl;
+            futProm->getPromise().set_value();
+        }
+    }
+}
+
+
+std::shared_ptr<Password> Password::create(const std::shared_ptr<Session>& session, const std::string& label, const std::string& password)
+{
+    nlohmann::json json;
+
+
+    json["password"] = password;
+    json["label"]    = label;
+
+    Password* toReturn = new Password(session, json);
 
 
     return toReturn->shared_from_this();
@@ -70,16 +102,18 @@ void Password::sync() { pull(); }
 void Password::pull()
 {
     nlohmann::json json = ncPOST("show", { { "id", getID() } });
+    std::unique_lock<std::shared_mutex> lock(_mutex);
 
 
     if( json.value("id", "") == _json.at("id") ) // Will not throw if new json doesn't have an ID but will if current json doesn't.
-        _json = json;
-
-    _lastSync = std::chrono::system_clock::now();
+    {
+        _json     = json;
+        _lastSync = std::chrono::system_clock::now();
+    }
 }
 
 
-void Password::push() const {}
+void Password::push() {}
 
 
 std::string Password::getID() const
@@ -91,7 +125,7 @@ std::string Password::getID() const
 std::string Password::getLabel()
 {
     if( !_json.contains("label") )
-        sync();
+        pull();
 
 
     return _json.at("label");

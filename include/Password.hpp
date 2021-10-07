@@ -32,8 +32,10 @@
 #endif
 
 #include <chrono>
+#include <shared_mutex>
 #include <string>
 #include <API_Implementor.hpp>
+#include <internal/FuturePromise.hpp>
 #include <nlohmann/json.hpp>
 
 namespace ncpass
@@ -54,6 +56,7 @@ class NCPASSCPP_PUBLIC Password : public API_Implementor<Password>
 
     std::chrono::system_clock::time_point _lastSync; ///< The last time this password was synced with the server.
     nlohmann::json _json;                            ///< The JSON for the password.
+    mutable std::shared_mutex _mutex;                ///< The mutex used to lock any member variables of this instance.
 
 
   protected:
@@ -64,7 +67,11 @@ class NCPASSCPP_PUBLIC Password : public API_Implementor<Password>
      * @param password_json The JSON of the password to create. Create a new password if empty.
      * @see ncpass::Session
      */
-    Password(const std::shared_ptr<Session>& session, const nlohmann::json& password_json=nlohmann::json::parse(R"({})"));
+    Password(
+      const std::shared_ptr<Session>& session,
+      const nlohmann::json& password_json,
+      std::shared_ptr<internal::FuturePromise<void>> futProm=std::shared_ptr<internal::FuturePromise<void>>(new internal::FuturePromise<void>())
+      );
 
 
   public:
@@ -75,7 +82,7 @@ class NCPASSCPP_PUBLIC Password : public API_Implementor<Password>
      * @return A shared_ptr to the ncpass::Password instance.
      * @see ncpass::Session
      */
-    static std::shared_ptr<Password> create(const std::shared_ptr<Session>& session);
+    static std::shared_ptr<Password> create(const std::shared_ptr<Session>& session, const std::string& label, const std::string& password);
 
     /**
      * @brief Gets a Password from the server based on the given ID.
@@ -110,9 +117,9 @@ class NCPASSCPP_PUBLIC Password : public API_Implementor<Password>
     void pull();
 
     /**
-     * @brief Pushes data to the server. This overides any data in the server.
+     * @brief Pushes data to the server. This only updates the server's data if the local data is a newer version.
      */
-    void push() const;
+    void push();
 
     /**
      * @return The UUID of the password.
