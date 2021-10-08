@@ -16,6 +16,7 @@
  * along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
 
+#include <memory>
 #include <Session.hpp>
 #include "API_Implementor.cpp"
 
@@ -23,35 +24,20 @@ namespace ncpass
 {
 
 
-Session::Session(const std::string& username, const std::string& serverRoot, const std::string& password, std::shared_ptr<internal::FuturePromise<void>> futProm) :
-    _Base("session", futProm),
+Session::Session(const std::string& username, const std::string& serverRoot, const std::string& password) :
+    _Base("session"),
     k_apiURL("https://" + serverRoot + (serverRoot.back() != '/' ? "/" : "") + "apps/passwords/api/1.0/"),
     k_federatedID(username + "@" + (serverRoot.back() != '/' ? serverRoot : serverRoot.substr(0, serverRoot.size() - 1))),
     _usrPasswd(username + ":" + password)
-{
-    if( futProm.use_count() == 1 )
-    {
-        std::cout << "session: releasing base lock" << std::endl;
-        futProm->getPromise().set_value();
-    }
-}
+{}
 
 
 std::shared_ptr<Session> Session::create(const std::string& username, const std::string& serverRoot, const std::string& password)
 {
-    std::string federatedID = username + "@" + (serverRoot.back() != '/' ? serverRoot : serverRoot.substr(0, serverRoot.size() - 1));
+    auto s = std::shared_ptr<Session>(new Session(username, serverRoot, password));
 
 
-    for( auto session : getAllLocal() )
-    {
-        if( federatedID == session->getFederatedID())
-            return session;
-    }
-
-    Session* toReturn = new Session(username, serverRoot, password);
-
-
-    return toReturn->shared_from_this();
+    return s->registerInstance();
 }
 
 
@@ -61,10 +47,10 @@ std::shared_ptr<Session> Session::create(const std::string& federatedID, const s
 }
 
 
-std::vector<std::shared_ptr<Session>> Session::getAllLocal() { return _Base::getAllLocal(); }
+std::vector<std::shared_ptr<Session>> Session::getAllKnown() { return _Base::getRegistered(); }
 
 
-std::string Session::getFederatedID() const { return k_federatedID; }
+std::string Session::getID() const { return k_federatedID; }
 
 
 }

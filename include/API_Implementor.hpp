@@ -35,7 +35,6 @@
 #include <shared_mutex>
 #include <string>
 #include <vector>
-#include <internal/FuturePromise.hpp>
 #include <nlohmann/json.hpp>
 
 namespace ncpass
@@ -52,7 +51,7 @@ class Session; // forward declaration
 /**
  * @brief Class used for API calls to the Nextcloud server.
  * Abstract class that needs to be inherited to provide access to the Nextcloud server's API. This is because this class is the **only** class that can access ncpass::Session.
- * @tparam API_Type The derived class you are creating.
+ * @tparam API_Type The derived class you are creating (A.K.A. the type of this).
  * @see ncpass::Session
  * @author Reed Krantz
  */
@@ -92,11 +91,6 @@ class NCPASSCPP_PUBLIC API_Implementor : public std::enable_shared_from_this<API
     static std::vector<std::shared_ptr<API_Type>> s_allInstances; ///< Contains all the instances currently existing of a certain API_Type.
     static std::shared_mutex s_mutex;                             ///< Mutex used for locking access to s_allInstances.
 
-    /**
-     * @brief Adds instance to Vector. Used in constructor.
-     */
-    void addToVector(std::shared_ptr<internal::FuturePromise<void>>& futProm);
-
 
   protected:
 
@@ -109,25 +103,17 @@ class NCPASSCPP_PUBLIC API_Implementor : public std::enable_shared_from_this<API
      * @see ncpass::Session
      * @see https://git.mdns.eu/nextcloud/passwords/wikis/Developers/Index
      */
-    API_Implementor(
-      const std::shared_ptr<Session>& session,
-      const std::string& apiPath,
-      std::shared_ptr<internal::FuturePromise<void>> futProm=std::shared_ptr<internal::FuturePromise<void>>(new internal::FuturePromise<void>())
-      );
+    API_Implementor(const std::shared_ptr<Session>& session, const std::string& apiPath);
 
     /**
-     * @brief Constructor that obtains the ncpass::Session instance from another object.
-     * @param apiObject An ncpass::API_Implementor object that will be used to obtain the ncpass::Session. This is done by copying the lockbox and reference within the object.
+     * @brief Constructor that obtains the ncpass::Session instance from another object. This is done by copying the lockbox and reference within the object.
+     * @param apiObject An ncpass::API_Implementor object that will be used to obtain the ncpass::Session.
      * @param apiPath The path to append to the URL (example: ncpass::Password would be "password").
      * @see ncpass::Session
      * @see ncpass::API_Implementor::Lockbox
      * @see https://git.mdns.eu/nextcloud/passwords/wikis/Developers/Index
      */
-    API_Implementor(
-      const API_Implementor& apiObject,
-      const std::string& apiPath,
-      std::shared_ptr<internal::FuturePromise<void>> futProm=std::shared_ptr<internal::FuturePromise<void>>(new internal::FuturePromise<void>())
-      );
+    API_Implementor(const API_Implementor& apiObject, const std::string& apiPath);
 
     /**
      * @brief Dedicated constructor for ncpass::Session because it is also an API_Implementor.
@@ -135,16 +121,20 @@ class NCPASSCPP_PUBLIC API_Implementor : public std::enable_shared_from_this<API
      * @see ncpass::Session
      * @see https://git.mdns.eu/nextcloud/passwords/wikis/Developers/Index
      */
-    API_Implementor(
-      const std::string& apiPath,
-      std::shared_ptr<internal::FuturePromise<void>> futProm=std::shared_ptr<internal::FuturePromise<void>>(new internal::FuturePromise<void>())
-      );
+    API_Implementor(const std::string& apiPath);
 
     /**
      * @brief Gets all of the instances of the derived class in API_Type.
-     * @return A vector containing all currently active instances.
+     * @return A copy of API_Implementor::s_allInstances.
      */
-    static std::vector<std::shared_ptr<API_Type>> getAllLocal();
+    static std::vector<std::shared_ptr<API_Type>> getRegistered();
+
+    /**
+     * @brief Adds this instance to API_Implementor::s_allInstances.
+     * Calls std::enable_shared_from_this::shared_from_this so make sure there is a shared_ptr of your class before calling.
+     * @return Returns the instance just registered or the instance that is already registered with a matching ID.
+     */
+    std::shared_ptr<API_Type> registerInstance();
 
     /**
      * @brief Make a curl POST request.
@@ -153,6 +143,21 @@ class NCPASSCPP_PUBLIC API_Implementor : public std::enable_shared_from_this<API
      * @return The returning JSON of the call.
      */
     nlohmann::json ncPOST(const std::string& apiAction, const nlohmann::json& apiArgs);
+
+
+  public:
+
+    /**
+     * @brief Virtual destructor so deleting an instance via a pointer doesn't result in undefined behavior.
+     */
+    virtual ~API_Implementor();
+
+    /**
+     * @brief Gets a unique id for this object.
+     * This is usually tied to a value on the server.
+     * @return A string that should not be the same as any other object
+     */
+    virtual std::string getID() const = 0;
 };
 
 

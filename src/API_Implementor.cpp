@@ -17,6 +17,7 @@
  */
 
 #include <future>
+#include <memory>
 #include <shared_mutex>
 #include <sstream>
 #include <string>
@@ -42,35 +43,7 @@ std::shared_mutex API_Implementor<API_Type>::s_mutex;
 
 
 template <class API_Type>
-void API_Implementor<API_Type>::addToVector(std::shared_ptr<internal::FuturePromise<void>>& futProm)
-{
-    // lock write access to s_allInstances
-    std::unique_lock<std::shared_mutex> lock(s_mutex);
-
-
-    // Add new instance to the static vector. Designed to cause runtime error on object creation if you do the inheritance wrong.
-    s_allInstances.push_back(std::shared_ptr<API_Type>(static_cast<API_Type*>(this)));
-
-
-    assert(futProm.use_count() > 1);
-
-    std::thread t1(
-      [](__attribute__ ((unused)) std::unique_lock<std::shared_mutex> lock, std::shared_future<void> fut) {
-          std::cout << "waiting for notification" << std::endl;
-          fut.wait();
-          std::cout << "base unlocked" << std::endl;
-      },
-      std::move(lock),
-      futProm->getFuture()
-      );
-
-
-    t1.detach();
-}
-
-
-template <class API_Type>
-API_Implementor<API_Type>::API_Implementor(const std::shared_ptr<Session>& session, const std::string& apiPath, std::shared_ptr<internal::FuturePromise<void>> futProm) :
+API_Implementor<API_Type>::API_Implementor(const std::shared_ptr<Session>& session, const std::string& apiPath) :
     k_lockbox(session),
     k_session(*session),
     k_apiPath(apiPath + "/")
@@ -78,14 +51,13 @@ API_Implementor<API_Type>::API_Implementor(const std::shared_ptr<Session>& sessi
     // Compile time check that API_Type has a base of API_Implementor.
     static_assert(
       std::is_base_of<API_Implementor, API_Type>::value,
-      "API_Implementor<class API_Type> API_Type must be a child of API_Implementor. Check docs for how to use this."
+      "API_Implementor<class API_Type>: API_Type should be set to your child class."
       );
-    addToVector(futProm);
 }
 
 
 template <class API_Type>
-API_Implementor<API_Type>::API_Implementor(const API_Implementor& apiObject, const std::string& apiPath, std::shared_ptr<internal::FuturePromise<void>> futProm) :
+API_Implementor<API_Type>::API_Implementor(const API_Implementor& apiObject, const std::string& apiPath) :
     k_lockbox(apiObject.k_lockbox),
     k_session(apiObject.k_session),
     k_apiPath(apiPath + "/")
@@ -93,30 +65,51 @@ API_Implementor<API_Type>::API_Implementor(const API_Implementor& apiObject, con
     // Compile time check that API_Type has a base of API_Implementor.
     static_assert(
       std::is_base_of<API_Implementor, API_Type>::value,
-      "API_Implementor<class API_Type> API_Type must be a child of API_Implementor. Check docs for how to use this."
+      "API_Implementor<class API_Type>: API_Type should be set to your child class."
       );
-    addToVector(futProm);
 }
 
 
 template <class API_Type>
-API_Implementor<API_Type>::API_Implementor(const std::string& apiPath, std::shared_ptr<internal::FuturePromise<void>> futProm) :
+API_Implementor<API_Type>::API_Implementor(const std::string& apiPath) :
     k_lockbox(std::shared_ptr<Session>()),
     k_session(static_cast<Session&>(*this)),
     k_apiPath(apiPath + "/")
 {
     static_assert(std::is_base_of<Session, API_Type>::value, "API_Implementor(const std::string& apiPath) can only be called from Session");
-    addToVector(futProm);
 }
 
 
 template <class API_Type>
-std::vector<std::shared_ptr<API_Type>> API_Implementor<API_Type>::getAllLocal()
+std::vector<std::shared_ptr<API_Type>> API_Implementor<API_Type>::getRegistered()
 {
     std::shared_lock<std::shared_mutex> lock(s_mutex);
 
 
     return s_allInstances;
+}
+
+
+template <class API_Type>
+std::shared_ptr<API_Type> API_Implementor<API_Type>::registerInstance()
+{
+    // lock write access to s_allInstances
+    std::unique_lock<std::shared_mutex> lock(s_mutex);
+
+    auto id = this->getID();
+
+
+    // verify that the object to register doesn't already have a duplicate
+    for( auto apiImp : s_allInstances )
+    {
+        if( apiImp->getID() == id )
+            return apiImp;  // if it does return that instead.
+    }
+
+    // Add new instance to the static vector.
+    s_allInstances.push_back(this->shared_from_this());
+
+    return this->shared_from_this();
 }
 
 
@@ -127,6 +120,7 @@ nlohmann::json API_Implementor<API_Type>::ncPOST(const std::string& apiAction, c
     curlpp::Easy    request;
 
     nlohmann::json json;
+
     std::shared_lock<std::shared_mutex> lock(k_session._mutex);
 
 
@@ -152,6 +146,11 @@ nlohmann::json API_Implementor<API_Type>::ncPOST(const std::string& apiAction, c
 
     return json;
 }
+
+
+template <class API_Type>
+API_Implementor<API_Type>::~API_Implementor()
+{}
 
 
 }

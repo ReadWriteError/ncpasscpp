@@ -47,33 +47,33 @@ int main(int argc, char** argv)
     // DISCLAMER: this does not stop memory being writen to the disk during hybernation.
     mlockall(MCL_CURRENT | MCL_FUTURE | MCL_ONFAULT);
 
-    vector<shared_ptr<ncpass::Session>> credentials; // A vector containing all of the nextcloud credentials available on this server.
+    vector<shared_ptr<ncpass::Session>> sessions; // A vector containing all of the nextcloud credentials available on this server.
 
 
     // How you get your "federatedIDs and passwords" or "usernames, rootServerURLs and passwords" is up to you and your application of this lib.
     // I'm getting this from the Gnome Online Accounts daemon over dbus.
     // You can look in getDbusIDPass.hpp for how I do this (it's kinda complicated).
     for( array<string, 2> idPassArr : getDbusIDPass() ) // Gets a vector of string arrays containing { {federatedID, password}, {federatedID, password} } and loops through it.
-        credentials.push_back(ncpass::Session::create(idPassArr[0], idPassArr[1]));
+        sessions.push_back(ncpass::Session::create(idPassArr[0], idPassArr[1]));
 
     bool didAllPass = true;
 
 
     // Loop through credentials and verify each one.
-    for( shared_ptr<ncpass::Session> cred : credentials )
+    for( shared_ptr<ncpass::Session> session : sessions )
     {
         bool didTestPass = false;
 
         for( string federatedID : TEST_SESSION_FEDERATEDIDS )
         {
             if( !didTestPass )
-                didTestPass = federatedID == cred->getFederatedID();
+                didTestPass = federatedID == session->getID();
         }
 
         if( didAllPass )
             didAllPass = didTestPass;
 
-        cout << cred->getFederatedID() << " expected? " << (didTestPass ? "Yes" : "No") << endl; // Print the federated ID and whether it passed the test.
+        cout << session->getID() << " expected? " << (didTestPass ? "Yes" : "No") << endl; // Print the federated ID and whether it passed the test.
     }
 
     return !didAllPass;

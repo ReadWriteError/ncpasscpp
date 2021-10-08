@@ -19,7 +19,7 @@
 #include <future>
 #include <memory>
 #include <shared_mutex>
-#include <internal/FuturePromise.hpp>
+#include <thread>
 #include <nlohmann/json.hpp>
 #include <Password.hpp>
 #include "API_Implementor.cpp"
@@ -29,19 +29,13 @@ namespace ncpass
 {
 
 
-Password::Password(const std::shared_ptr<Session>& session, const nlohmann::json& password_json, std::shared_ptr<internal::FuturePromise<void>> futProm) :
-    _Base(session, "password", futProm),
+Password::Password(const std::shared_ptr<Session>& session, const nlohmann::json& password_json) :
+    _Base(session, "password"),
     _json(password_json)
 {
     if( _json.contains("id") )
     {
         pull();
-
-        if( futProm.use_count() == 1 )
-        {
-            std::cout << "password: releasing base lock" << std::endl;
-            futProm->getPromise().set_value();
-        }
     }
     else
     {
@@ -49,11 +43,16 @@ Password::Password(const std::shared_ptr<Session>& session, const nlohmann::json
 
         std::unique_lock<std::shared_mutex> lock(_mutex);
 
-        if( futProm.use_count() == 1 )
-        {
-            std::cout << "password: releasing base lock" << std::endl;
-            futProm->getPromise().set_value();
-        }
+        std::thread t1(
+          [passwd = std::shared_ptr<Password>(this)] (__attribute__ ((unused)) std::unique_lock<std::shared_mutex> lock) {
+              std::this_thread::sleep_for(std::chrono::milliseconds(250));
+              // TODO: create api here
+              passwd->registerInstance();
+          },
+          std::move(lock)
+          );
+
+        t1.detach();
     }
 }
 
@@ -75,25 +74,19 @@ std::shared_ptr<Password> Password::create(const std::shared_ptr<Session>& sessi
 
 std::shared_ptr<Password> Password::get(const std::shared_ptr<Session>& session, const std::string& id)
 {
-    for( auto password : getAllLocal() )
-    {
-        if( password->getID() == id )
-            return password;
-    }
-
     nlohmann::json json;
 
 
     json["id"] = id;
 
-    Password* toReturn = new Password(session, json);
+    auto p = std::shared_ptr<Password>(new Password(session, json));
 
 
-    return toReturn->shared_from_this();
+    return p->registerInstance();
 }
 
 
-std::vector<std::shared_ptr<Password>> Password::getAllLocal() { return _Base::getAllLocal(); }
+std::vector<std::shared_ptr<Password>> Password::getAllKnown() { return _Base::getRegistered(); }
 
 
 void Password::sync() { pull(); }

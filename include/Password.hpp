@@ -35,7 +35,6 @@
 #include <shared_mutex>
 #include <string>
 #include <API_Implementor.hpp>
-#include <internal/FuturePromise.hpp>
 #include <nlohmann/json.hpp>
 
 namespace ncpass
@@ -64,21 +63,19 @@ class NCPASSCPP_PUBLIC Password : public API_Implementor<Password>
     /**
      * @brief Creates a new password or links to an existing remote password.
      * @param session An active Nextcloud session.
-     * @param password_json The JSON of the password to create. Create a new password if empty.
+     * @param password_json A JSON object containing "id" to link with an existing password or "label" and "password" to create a new one.
      * @see ncpass::Session
      */
-    Password(
-      const std::shared_ptr<Session>& session,
-      const nlohmann::json& password_json,
-      std::shared_ptr<internal::FuturePromise<void>> futProm=std::shared_ptr<internal::FuturePromise<void>>(new internal::FuturePromise<void>())
-      );
+    Password(const std::shared_ptr<Session>& session, const nlohmann::json& password_json);
 
 
   public:
 
     /**
      * @brief Creates a new password.
-     * @param session A shared_ptr to a ncpass::Session instance used as credentials for the Nextcloud server's API.
+     * @param session A shared_ptr to a ncpass::Session instance. Used as credentials for the Nextcloud server's API.
+     * @param label The label of the Password that you're creating.
+     * @param password The password of the Password you're creating.
      * @return A shared_ptr to the ncpass::Password instance.
      * @see ncpass::Session
      */
@@ -102,9 +99,10 @@ class NCPASSCPP_PUBLIC Password : public API_Implementor<Password>
 
     /**
      * @brief Gets all of the instances of the Password class.
+     * Does not create or sync with new passwords in nextcloud.
      * @return A vector containing all currently active instances.
      */
-    static std::vector<std::shared_ptr<Password>> getAllLocal();
+    static std::vector<std::shared_ptr<Password>> getAllKnown();
 
     /**
      * @brief Pulls/pushes the most recent data from/to the server.

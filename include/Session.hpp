@@ -67,12 +67,7 @@ class NCPASSCPP_PUBLIC Session : public API_Implementor<Session>
      * @param serverRoot The root URL of the server without https:// or a path unless necessary for your server (example: cloud.example.com).
      * @param password The password for your login. If you have Two-Factor Authentication enabled this must be an app password.
      */
-    Session(
-      const std::string& username,
-      const std::string& serverRoot,
-      const std::string& password,
-      std::shared_ptr<internal::FuturePromise<void>> futProm=std::shared_ptr<internal::FuturePromise<void>>(new internal::FuturePromise<void>())
-      );
+    Session(const std::string& username, const std::string& serverRoot, const std::string& password);
 
 
   public:
@@ -100,12 +95,12 @@ class NCPASSCPP_PUBLIC Session : public API_Implementor<Session>
      * @return A vector containing all currently active instances.
      * @see ncpass::API_Implementor::getAllLocal()
      */
-    static std::vector<std::shared_ptr<Session>> getAllLocal();
+    static std::vector<std::shared_ptr<Session>> getAllKnown();
 
     /**
      * @return The federated ID of the nextcloud user this Session is connected to.
      */
-    std::string getFederatedID() const;
+    std::string getID() const;
 
     template <class API_Type>
     friend class API_Implementor;
