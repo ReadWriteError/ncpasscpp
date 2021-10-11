@@ -17,14 +17,13 @@
  */
 
 #include <chrono>
-#include <future>
 #include <memory>
 #include <mutex>
-#include <ratio>
 #include <shared_mutex>
 #include <thread>
 #include <nlohmann/json.hpp>
 #include <Password.hpp>
+#include <sodium/crypto_generichash.h>
 #include "API_Implementor.cpp"
 
 
@@ -42,7 +41,11 @@ Password::Password(const std::shared_ptr<Session>& session, const nlohmann::json
         assert(_json.contains("password") && _json.contains("label"));
 #endif
 
-        _json["hash"] = _json.at("password");
+        {
+            unsigned char pwdHash[crypto_generichash_BYTES];
+            crypto_generichash(pwdHash, sizeof(pwdHash), (const unsigned char*)_json.at("password").get<std::string>().c_str(), _json.at("password").size(), NULL, 0);
+            _json["hash"] = std::string((char*)pwdHash);
+        }
 
         std::thread t1(
           [passwd = std::shared_ptr<Password>(this)] () {
