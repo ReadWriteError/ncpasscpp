@@ -32,6 +32,8 @@
 #endif
 
 #include <chrono>
+#include <condition_variable>
+#include <mutex>
 #include <shared_mutex>
 #include <string>
 #include <API_Implementor.hpp>
@@ -53,9 +55,11 @@ class NCPASSCPP_PUBLIC Password : public API_Implementor<Password>
 {
   private:
 
-    std::chrono::system_clock::time_point _lastSync; ///< The last time this password was synced with the server.
-    nlohmann::json _json;                            ///< The JSON for the password.
-    mutable std::shared_mutex _mutex;                ///< The mutex used to lock any member variables of this instance.
+    std::chrono::system_clock::time_point _lastSync;  ///< The last time this password was synced with the server.
+    nlohmann::json _json;                             ///< The JSON for the password.
+    mutable std::shared_mutex           _memberMutex; ///< The mutex used to lock any member variables of this instance.
+    mutable std::mutex                  _apiMutex;    ///< The mutex used to prevent 2 simultanious api calls. Never allow this to wait while you have a lock on _memberMutex or deadlock.
+    mutable std::condition_variable_any _apiConVar;   ///< Used to wait for the passwords constructor to finish its create API call.
 
 
   protected:
@@ -127,7 +131,7 @@ class NCPASSCPP_PUBLIC Password : public API_Implementor<Password>
     /**
      * @return User defined label of the password.
      */
-    std::string getLabel();
+    std::string getLabel() const;
 
     /**
      * @brief Set the passwords label asynchronously.
@@ -138,7 +142,7 @@ class NCPASSCPP_PUBLIC Password : public API_Implementor<Password>
     /**
      * @return Username associated with the password.
      */
-    std::string getUsername();
+    std::string getUsername() const;
 
     /**
      * @brief Set the passwords username asynchronously.
@@ -149,7 +153,7 @@ class NCPASSCPP_PUBLIC Password : public API_Implementor<Password>
     /**
      * @return The actual password.
      */
-    std::string getPassword();
+    std::string getPassword() const;
 
     /**
      * @brief Set the passwords password asynchronously.

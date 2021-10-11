@@ -33,23 +33,35 @@ Password::Password(const std::shared_ptr<Session>& session, const nlohmann::json
     _Base(session, "password"),
     _json(password_json)
 {
+    _json.erase("status");
+
     if( _json.contains("id") )
     {
         pull();
+
+        std::thread t1(
+          [passwd = std::shared_ptr<Password>(this)] () {
+              std::shared_lock<std::shared_mutex> lock(passwd->_memberMutex);
+              passwd->_apiConVar.wait(lock, [&passwd] { return passwd->_json.contains("status"); });
+              passwd->registerInstance();
+          }
+          );
+
+        t1.detach();
     }
     else
     {
+#ifndef NDEBUG
         assert(_json.contains("password") && _json.contains("label"));
-
-        std::unique_lock<std::shared_mutex> lock(_mutex);
+#endif
 
         std::thread t1(
-          [passwd = std::shared_ptr<Password>(this)] (__attribute__ ((unused)) std::unique_lock<std::shared_mutex> lock) {
+          [passwd = std::shared_ptr<Password>(this)] () {
               std::this_thread::sleep_for(std::chrono::milliseconds(250));
               // TODO: create api here
+              passwd->_apiConVar.notify_all();
               passwd->registerInstance();
-          },
-          std::move(lock)
+          }
           );
 
         t1.detach();
@@ -79,10 +91,10 @@ std::shared_ptr<Password> Password::get(const std::shared_ptr<Session>& session,
 
     json["id"] = id;
 
-    auto p = std::shared_ptr<Password>(new Password(session, json));
+    auto toReturn = new Password(session, json);
 
 
-    return p->registerInstance();
+    return toReturn->shared_from_this();
 }
 
 
@@ -94,15 +106,37 @@ void Password::sync() { pull(); }
 
 void Password::pull()
 {
-    nlohmann::json json = ncPOST("show", { { "id", getID() } });
-    std::unique_lock<std::shared_mutex> lock(_mutex);
+    std::thread t1([this] ()
+      {
+          std::unique_lock<std::shared_mutex> lock(_memberMutex);
+
+          nlohmann::json json_bak = _json;
+          nlohmann::json json_new;
+
+          _apiConVar.wait(lock, [this] { return _apiMutex.try_lock(); });
+          lock.unlock();
+
+          json_new = ncPOST("show", { { "id", json_bak.at("id") } });
+
+          lock.lock();
+          _apiMutex.unlock();
+
+          //TODO: conflict handling?
+          if( json_bak != _json )
+              json_new.merge_patch(nlohmann::json::diff(json_bak, _json));
+
+          if( json_new.value("id", "") == _json.at("id") )
+          {
+              _json     = json_new;
+              _lastSync = std::chrono::system_clock::now();
+          }
+
+          _apiConVar.notify_all();
+      }
+      );
 
 
-    if( json.value("id", "") == _json.at("id") ) // Will not throw if new json doesn't have an ID but will if current json doesn't.
-    {
-        _json     = json;
-        _lastSync = std::chrono::system_clock::now();
-    }
+    t1.detach();
 }
 
 
@@ -111,15 +145,21 @@ void Password::push() {}
 
 std::string Password::getID() const
 {
+    std::shared_lock<std::shared_mutex> lock(_memberMutex);
+
+
+    _apiConVar.wait(lock, [this] { return _json.contains("id"); });
+
     return _json.at("id");
 }
 
 
-std::string Password::getLabel()
+std::string Password::getLabel() const
 {
-    if( !_json.contains("label") )
-        pull();
+    std::shared_lock<std::shared_mutex> lock(_memberMutex);
 
+
+    _apiConVar.wait(lock, [this] { return _json.contains("label"); });
 
     return _json.at("label");
 }
@@ -127,16 +167,20 @@ std::string Password::getLabel()
 
 void Password::setLabel(const std::string& label)
 {
+    std::unique_lock<std::shared_mutex> lock(_memberMutex);
+
+
     _json["label"] = label;
     push();
 }
 
 
-std::string Password::getUsername()
+std::string Password::getUsername() const
 {
-    if( !_json.contains("username") )
-        sync();
+    std::shared_lock<std::shared_mutex> lock(_memberMutex);
 
+
+    _apiConVar.wait(lock, [this] { return _json.contains("username"); });
 
     return _json.at("username");
 }
@@ -144,16 +188,20 @@ std::string Password::getUsername()
 
 void Password::setUsername(const std::string& username)
 {
+    std::unique_lock<std::shared_mutex> lock(_memberMutex);
+
+
     _json["username"] = username;
     push();
 }
 
 
-std::string Password::getPassword()
+std::string Password::getPassword() const
 {
-    if( !_json.contains("password") )
-        sync();
+    std::shared_lock<std::shared_mutex> lock(_memberMutex);
 
+
+    _apiConVar.wait(lock, [this] { return _json.contains("password"); });
 
     return _json.at("password");
 }
@@ -161,6 +209,9 @@ std::string Password::getPassword()
 
 void Password::setPassword(const std::string& password)
 {
+    std::unique_lock<std::shared_mutex> lock(_memberMutex);
+
+
     _json["password"] = password;
     push();
 }
