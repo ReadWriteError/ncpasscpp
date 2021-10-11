@@ -47,6 +47,9 @@ int main(int argc, char** argv)
     // DISCLAMER: this does not stop memory being writen to the disk during hybernation.
     mlockall(MCL_CURRENT | MCL_FUTURE | MCL_ONFAULT);
 
+    // print "true"/"false" for bools
+    cout << boolalpha;
+
     vector<shared_ptr<ncpass::Session>> sessions; // A vector containing all of the nextcloud credentials available on this server.
 
 
@@ -66,14 +69,16 @@ int main(int argc, char** argv)
 
         for( string federatedID : TEST_SESSION_FEDERATEDIDS )
         {
-            if( !didTestPass )
-                didTestPass = federatedID == session->getID();
+            didTestPass = federatedID == session->getID();
+
+            if( didTestPass )
+                break;
         }
 
         if( didAllPass )
             didAllPass = didTestPass;
 
-        cout << session->getID() << " expected? " << (didTestPass ? "Yes" : "No") << endl; // Print the federated ID and whether it passed the test.
+        cout << session->getID() << " expected? " << didTestPass << endl; // Print the federated ID and whether it passed the test.
     }
 
     return !didAllPass;

@@ -25,6 +25,7 @@
 #include <sys/mman.h>
 #include <sys/prctl.h>
 #include <Session.hpp>
+#include <vector>
 #include "getDbusIDPass.cpp"
 #include "user-specific.hpp"
 
@@ -48,6 +49,9 @@ int main(int argc, char** argv)
     // DISCLAMER: this does not stop memory being writen to the disk during hybernation.
     mlockall(MCL_CURRENT | MCL_FUTURE | MCL_ONFAULT);
 
+    // print "true"/"false" for bools
+    cout << boolalpha;
+
     shared_ptr<ncpass::Session> session; // The Nextcloud Session to use for this test
 
 
@@ -62,25 +66,22 @@ int main(int argc, char** argv)
 
     auto password = ncpass::Password::get(session, TEST_PASSWORD_UUID); // Create our password.
 
-    bool didAllPass = true;
-    bool tests[]    = { // All the tests to perform.
-        password->getID() == TEST_PASSWORD_UUID,
-        password->getLabel() == TEST_PASSWORD_LABEL,
-        password->getUsername() == TEST_PASSWORD_USERNAME,
-        password->getPassword() == TEST_PASSWORD_PASSWORD
-    };
+    std::vector<bool> tests; // The results of all the tests.
 
 
-    // Print the status of those tests.
-    cout << "ID pass?       " << tests[0] << endl;
-    cout << "Label pass?    " << tests[1] << endl;
-    cout << "Username pass? " << tests[2] << endl;
-    cout << "Password pass? " << tests[3] << endl;
+    // Print the tests and add them to the vector.
+    tests.push_back(false); cout << "ID pass?       " << (tests[0] = password->getID() == TEST_PASSWORD_UUID) << endl;
+    tests.push_back(false); cout << "Label pass?    " << (tests[1] = password->getLabel() == TEST_PASSWORD_LABEL) << endl;
+    tests.push_back(false); cout << "Username pass? " << (tests[2] = password->getUsername() == TEST_PASSWORD_USERNAME) << endl;
+    tests.push_back(false); cout << "Password pass? " << (tests[3] = password->getPassword() == TEST_PASSWORD_PASSWORD) << endl;
 
 
-    // check if every test passed and change didAllPass if they didn't
-    for( unsigned int i = 0; didAllPass && i < sizeof(tests) / sizeof(tests[0]); i++ )
-        didAllPass = tests[i];
+    // return fail status if any tests failed
+    for( bool test : tests )
+    {
+        if( !test )
+            return 1;
+    }
 
-    return !didAllPass;
+    return 0;
 }
