@@ -36,7 +36,11 @@ namespace ncpass
 
 
 template <class API_Type>
-std::vector<std::shared_ptr<API_Type>> API_Implementor<API_Type>::s_allInstances;
+std::vector<std::shared_ptr<API_Type>> API_Implementor<API_Type>::s_activeInstances;
+template <class API_Type>
+std::vector<std::shared_ptr<API_Type>> API_Implementor<API_Type>::s_creatingInstances;
+template <class API_Type>
+std::vector<std::weak_ptr<API_Type>> API_Implementor<API_Type>::s_deletingInstances;
 
 template <class API_Type>
 std::shared_mutex API_Implementor<API_Type>::s_mutex;
@@ -86,30 +90,109 @@ std::vector<std::shared_ptr<API_Type>> API_Implementor<API_Type>::getRegistered(
     std::shared_lock<std::shared_mutex> lock(s_mutex);
 
 
-    return s_allInstances;
+    return s_activeInstances;
 }
 
 
 template <class API_Type>
 std::shared_ptr<API_Type> API_Implementor<API_Type>::registerInstance()
 {
-    // lock write access to s_allInstances
-    std::unique_lock<std::shared_mutex> lock(s_mutex);
-
+    std::shared_ptr<API_Type> newInstance;
     auto id = this->getID();
 
 
+    try
+    {
+        newInstance = this->shared_from_this();
+    }
+    catch( const std::bad_weak_ptr& e )
+    {
+        newInstance = std::shared_ptr<API_Type>(static_cast<API_Type*>(this));
+    }
+
+    std::unique_lock<std::shared_mutex> lock(s_mutex);
+
+
     // verify that the object to register doesn't already have a duplicate
-    for( auto apiImp : s_allInstances )
+    for( auto apiImp : s_creatingInstances )
     {
         if( apiImp->getID() == id )
             return apiImp;  // if it does return that instead.
     }
 
-    // Add new instance to the static vector.
-    s_allInstances.push_back(this->shared_from_this());
+    for( auto apiImp : s_activeInstances )
+    {
+        if( apiImp->getID() == id )
+            return apiImp;
+    }
 
-    return this->shared_from_this();
+    for( auto itr = s_deletingInstances.begin(); itr != s_deletingInstances.end(); itr++ )
+    {
+        if( auto apiImp = itr->lock() )
+        {
+            if( apiImp->getID() == id )
+                return apiImp;
+        }
+        else
+        {
+            s_deletingInstances.erase(itr);
+            itr--;
+        }
+    }
+
+    // Add new instance to the static vector.
+    s_activeInstances.push_back(newInstance);
+
+    return newInstance;
+}
+
+
+template <class API_Type>
+bool API_Implementor<API_Type>::setPopulated()
+{
+    auto thisPtr = this->shared_from_this();
+
+    std::unique_lock<std::shared_mutex> lock(s_mutex);
+
+
+    for( auto itr = s_creatingInstances.begin(); itr != s_creatingInstances.end(); itr++ )
+    {
+        if( *itr == thisPtr )
+        {
+            s_activeInstances.push_back(*itr);
+            s_creatingInstances.erase(itr);
+
+            return true;
+        }
+    }
+
+    return false;
+}
+
+
+template <class API_Type>
+bool API_Implementor<API_Type>::unregisterInstance()
+{
+    auto thisPtr = this->shared_from_this();
+
+    std::unique_lock<std::shared_mutex> lock(s_mutex);
+
+
+    for( auto currentVector : { &s_activeInstances, &s_creatingInstances } )
+    {
+        for( auto itr = currentVector.begin(); itr != currentVector.end(); itr++ )
+        {
+            if( *itr == thisPtr )
+            {
+                s_deletingInstances.push_back(std::weak_ptr(*itr));
+                currentVector.erase(itr);
+
+                return true;
+            }
+        }
+    }
+
+    return false;
 }
 
 

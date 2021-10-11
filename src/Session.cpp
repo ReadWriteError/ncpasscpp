@@ -34,10 +34,7 @@ Session::Session(const std::string& username, const std::string& serverRoot, con
 
 std::shared_ptr<Session> Session::create(const std::string& username, const std::string& serverRoot, const std::string& password)
 {
-    auto s = std::shared_ptr<Session>(new Session(username, serverRoot, password));
-
-
-    return s->registerInstance();
+    return (new Session(username, serverRoot, password))->registerInstance();
 }
 
 

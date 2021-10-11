@@ -33,7 +33,7 @@
 
 #include <chrono>
 #include <condition_variable>
-#include <mutex>
+#include <queue>
 #include <shared_mutex>
 #include <string>
 #include <API_Implementor.hpp>
@@ -55,10 +55,12 @@ class NCPASSCPP_PUBLIC Password : public API_Implementor<Password>
 {
   private:
 
-    std::chrono::system_clock::time_point _lastSync;  ///< The last time this password was synced with the server.
-    nlohmann::json _json;                             ///< The JSON for the password.
-    mutable std::shared_mutex           _memberMutex; ///< The mutex used to lock any member variables of this instance.
-    mutable std::mutex                  _apiMutex;    ///< The mutex used to prevent 2 simultanious api calls. Never allow this to wait while you have a lock on _memberMutex or deadlock.
+    std::chrono::system_clock::time_point _lastSync; ///< The last time this password was synced with the server.
+    nlohmann::json _json;                            ///< The JSON for the password.
+    std::queue<nlohmann::json> _jsonPushQueue;       ///< The queue for json patches to be sent to the server.
+
+    mutable std::shared_mutex           _memberMutex; ///< The mutex used to lock any member variables of this instance. You must have _apiMutex and _memberMutex unique_locks to edit _json.
+    mutable std::mutex                  _apiMutex;    ///< The mutex used to prevent 2 simultanious api calls. Never allow this to wait while you have a lock on _memberMutex or you will have a deadlock.
     mutable std::condition_variable_any _apiConVar;   ///< Used to wait for the passwords constructor to finish its create API call.
 
 
@@ -72,8 +74,23 @@ class NCPASSCPP_PUBLIC Password : public API_Implementor<Password>
      */
     Password(const std::shared_ptr<Session>& session, const nlohmann::json& password_json);
 
+    /**
+     * @brief Pulls data from the server.
+     */
+    void pull();
+
+    /**
+     * @brief Pushes data to the server. This only updates the server's data if the local data is a newer version.
+     */
+    void push();
+
 
   public:
+
+    /**
+     * @brief Pulls/pushes the most recent data from/to the server.
+     */
+    void sync();
 
     /**
      * @brief Creates a new password.
@@ -107,21 +124,6 @@ class NCPASSCPP_PUBLIC Password : public API_Implementor<Password>
      * @return A vector containing all currently active instances.
      */
     static std::vector<std::shared_ptr<Password>> getAllKnown();
-
-    /**
-     * @brief Pulls/pushes the most recent data from/to the server.
-     */
-    void sync();
-
-    /**
-     * @brief Pulls data from the server. This overides any data locally.
-     */
-    void pull();
-
-    /**
-     * @brief Pushes data to the server. This only updates the server's data if the local data is a newer version.
-     */
-    void push();
 
     /**
      * @return The UUID of the password.

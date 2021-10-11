@@ -88,13 +88,15 @@ class NCPASSCPP_PUBLIC API_Implementor : public std::enable_shared_from_this<API
     const Session&    k_session; ///< Holds the Nextcloud server this instance is tied to.
     const std::string k_apiPath; ///< The path to append to the URL (example: ncpass::Password would be "password/").
 
-    static std::vector<std::shared_ptr<API_Type>> s_allInstances; ///< Contains all the instances currently existing of a certain API_Type.
-    static std::shared_mutex s_mutex;                             ///< Mutex used for locking access to s_allInstances.
+    static std::vector<std::shared_ptr<API_Type>> s_activeInstances;   ///< Contains all the instances currently existing of a certain API_Type that are vaild.
+    static std::vector<std::shared_ptr<API_Type>> s_creatingInstances; ///< Contains all the instances currently existing of a certain API_Type that are being created (constructing or first pull).
+    static std::vector<std::weak_ptr<API_Type>>   s_deletingInstances; ///< Contains all the instances currently existing of a certain API_Type that are pending deletion.
+    static std::shared_mutex s_mutex;                                  ///< Mutex used for locking access to static variables.
 
 
   protected:
 
-    typedef API_Implementor<API_Type> _Base; ///< This class. used for child classes.
+    typedef API_Implementor<API_Type> _Base; ///< This class. Used for child classes.
 
     /**
      * @brief Constructor for providing the Nextcloud server's credentials.
@@ -124,17 +126,28 @@ class NCPASSCPP_PUBLIC API_Implementor : public std::enable_shared_from_this<API
     API_Implementor(const std::string& apiPath);
 
     /**
-     * @brief Gets all of the instances of the derived class in API_Type.
-     * @return A copy of API_Implementor::s_allInstances.
+     * @brief Gets all of the instances of the derived class in API_Type that are currently active.
+     * @return A copy of API_Implementor::s_allActiveInstances.
      */
     static std::vector<std::shared_ptr<API_Type>> getRegistered();
 
     /**
-     * @brief Adds this instance to API_Implementor::s_allInstances.
-     * Calls std::enable_shared_from_this::shared_from_this so make sure there is a shared_ptr of your class before calling.
+     * @brief Adds this instance to the pool of available instances.
      * @return Returns the instance just registered or the instance that is already registered with a matching ID.
      */
     std::shared_ptr<API_Type> registerInstance();
+
+    /**
+     * @brief Sets this instance as active meaning its fully populated.
+     * @return True if the instance is set as populated. False if the instance is already populated.
+     */
+    bool setPopulated();
+
+    /**
+     * @brief Remove this instance from the active pool to prepare for its deletion.
+     * @return True if successful. False if instance is not active.
+     */
+    bool unregisterInstance();
 
     /**
      * @brief Make a curl POST request.
