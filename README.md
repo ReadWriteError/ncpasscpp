@@ -50,7 +50,7 @@ I'll implement more API related features soon.
 
 ### Security Information
 If you are planning on using this library there are some security considerations you need to know about.
-**All objects including passwords and the session information are stored locally in RAM in plain text.**
+All objects including passwords and the session information are stored locally in RAM in plain text.
 So if you are making a password manager it's your responsibility to **make sure that no user level process can access your process RAM**.
 On linux this can be done with `prctl(PR_SET_DUMPABLE, false)` from `#include <sys/prctl.h>` at the start of your main() function.
 It's also your responsibility to **make sure your process's RAM is never stored on the disk**.
