@@ -6,7 +6,7 @@ Everything is subject to change at this point.
 If you are looking to make a password manager in C++ for [Nextcloud Passwords](https://apps.nextcloud.com/apps/passwords) then you have come to the right place.
 This is a very high level library and all API calls to the server are abstracted and performed asynchronously.
 I've tried my very hardest to make sure this project is as easy to use as possible.
-Anyone should be able quickly and easily learn how to use this project.
+Anyone should be able quickly and easily learn how to use this library.
 
 This is a third-party library.
 
