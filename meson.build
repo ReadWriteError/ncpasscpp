@@ -12,6 +12,7 @@ lib_args = ['-DBUILDING_NCPASSCPP']
 curlpp_dep = dependency('curlpp', version: '>= 0.8.1')
 nlohmann_json_dep = dependency('nlohmann_json', version: '>= 3.9.1')
 libsodium_dep = dependency('libsodium', version: '>= 1.0.18')
+libssl_dep = dependency('openssl')
 thread_dep = dependency('threads')
 
 inc = include_directories('include')

@@ -23,8 +23,8 @@
 #include <thread>
 #include <nlohmann/json.hpp>
 #include <Password.hpp>
-#include <sodium/crypto_generichash.h>
 #include "API_Implementor.cpp"
+#include "utils.cpp"
 
 
 namespace ncpass
@@ -41,33 +41,57 @@ Password::Password(const std::shared_ptr<Session>& session, const nlohmann::json
         assert(_json.contains("password") && _json.contains("label"));
 #endif
 
-        {
-            unsigned char pwdHash[crypto_generichash_BYTES];
-            crypto_generichash(pwdHash, sizeof(pwdHash), (const unsigned char*)_json.at("password").get<std::string>().c_str(), _json.at("password").size(), NULL, 0);
-            _json["hash"] = std::string((char*)pwdHash);
-        }
+        //TODO: Remove read only properties.
+
+        if( !_json.contains("hash") )
+            _json["hash"] = utils::SHA1(_json.at("password"));
 
         std::thread t1(
-          [passwd = std::shared_ptr<Password>(this)] () {
+          [passwd = std::shared_ptr<Password>(this), apiLock = std::unique_lock(_apiMutex)] (nlohmann::json json_bak) {
               std::this_thread::sleep_for(std::chrono::milliseconds(250));
 
-              std::unique_lock memberLock(passwd->_memberMutex, std::defer_lock);
-              std::unique_lock apiLock(passwd->_apiMutex, std::defer_lock);
-              std::lock(apiLock, memberLock);
 
-              passwd->_json = passwd->_json.patch(passwd->_jsonPushQueue.front());
-              passwd->_jsonPushQueue.pop();
+              std::unique_lock memberLock(passwd->_memberMutex);
+              {
+                  nlohmann::json currentPatch = nlohmann::json::diff("", json_bak);
 
+                  for( nlohmann::json& patch : passwd->_jsonPushQueue )
+                  {
+                      bool applyPatch = true;
+
+                      for( nlohmann::json& op : patch )
+                      {
+                          for( nlohmann::json& currentOP : currentPatch )
+                              if( op.at("path") == currentOP.at("path") )
+                                  applyPatch = false;
+
+                      }
+
+                      if( !applyPatch )
+                          break;
+
+                      currentPatch.merge_patch(patch);
+                      passwd->_jsonPushQueue.pop_front();
+                  }
+
+                  json_bak = nlohmann::json("").patch(currentPatch);
+              }
               memberLock.unlock();
 
-              nlohmann::json json_new = passwd->ncPOST("create", passwd->_json);
+
+              nlohmann::json json_new = passwd->ncPOST("create", json_bak);
+
 
               if( json_new.contains("id") && json_new.contains("revision") )
               {
+                  memberLock.lock();
+
                   passwd->_json["id"]       = json_new.at("id");
                   passwd->_json["revision"] = json_new.at("revision");
 
-                  passwd->_apiConVar.notify_all();
+                  memberLock.unlock();
+                  passwd->_updateConVar.notify_all();
+
                   passwd->registerInstance();
                   passwd->pull();
               }
@@ -75,7 +99,8 @@ Password::Password(const std::shared_ptr<Session>& session, const nlohmann::json
               {
                   //TODO: Implement failure action.
               }
-          }
+          },
+          _json
           );
 
         t1.detach();
@@ -87,29 +112,43 @@ void Password::pull()
 {
     std::thread t1([passwd = shared_from_this()] ()
       {
-          std::unique_lock memberLock(passwd->_memberMutex, std::defer_lock);
           std::unique_lock apiLock(passwd->_apiMutex, std::defer_lock);
+          std::unique_lock memberLock(passwd->_memberMutex, std::defer_lock);
           std::lock(apiLock, memberLock);
 
+          // Only pull once every 250 milliseconds.
           if( std::chrono::system_clock::now() > passwd->_lastSync + std::chrono::milliseconds(250) )
           {
+              const std::string id = passwd->_json.at("id");
+
               memberLock.unlock();
 
-              nlohmann::json json_new = passwd->ncPOST("show", { { "id", passwd->_json.at("id") } });
+              nlohmann::json json_new = passwd->ncPOST("show", { { "id", id } }); // Actual pull here.
 
-              if( json_new.value("id", "") == passwd->_json.at("id") )
+              // Verify that json_new is valid and not an error code.
+              if( (json_new.value("id", "") == id) && (json_new.value("revision", "") != "") )
               {
-                  json_new = nlohmann::json::diff(passwd->_json, json_new);
-
                   memberLock.lock();
 
-                  if( !json_new.empty() ) //TODO: Detect new revisions instead of changes?
+                  // detect changes
+                  if( !passwd->_json.contains("revision") || (json_new.at("revision") != passwd->_json.at("revision")))
                   {
-                      if( passwd->_jsonPushQueue.empty() || !passwd->_json.contains("revision") )
+                      // If there are no pending patches to push then write new revision.
+                      if( passwd->_jsonPushQueue.empty() )
                       {
-                          passwd->_json = passwd->_json.patch(json_new);
+                          passwd->_json = json_new;
                           passwd->setPopulated();
                       }
+                      // If current JSON doesn't contain "revision" then assume this is the first pull and apply any pending patches then write.
+                      else if( !passwd->_json.contains("revision") )
+                      {
+                          for( nlohmann::json& patch : passwd->_jsonPushQueue )
+                              json_new = json_new.patch(patch);
+
+                          passwd->_json = json_new;
+                          passwd->setPopulated();
+                      }
+                      // If neither then we have a conflict.
                       else
                       {
                           //TODO: Register conflict here.
@@ -118,7 +157,7 @@ void Password::pull()
 
                   passwd->_lastSync = std::chrono::system_clock::now();
 
-                  passwd->_apiConVar.notify_all();
+                  passwd->_updateConVar.notify_all();
               }
               else
               {
@@ -175,7 +214,7 @@ std::string Password::getID() const
     std::shared_lock lock(_memberMutex);
 
 
-    _apiConVar.wait(lock, [this] { return _json.contains("id"); });
+    _updateConVar.wait(lock, [this] { return _json.contains("id"); });
 
     return _json.at("id");
 }
@@ -186,7 +225,7 @@ std::string Password::getLabel() const
     std::shared_lock lock(_memberMutex);
 
 
-    _apiConVar.wait(lock, [this] { return _json.contains("label"); });
+    _updateConVar.wait(lock, [this] { return _json.contains("label"); });
 
     return _json.at("label");
 }
@@ -195,9 +234,13 @@ std::string Password::getLabel() const
 void Password::setLabel(const std::string& label)
 {
     std::unique_lock lock(_memberMutex);
+    nlohmann::json   json_bak = _json;
 
 
     _json["label"] = label;
+    _jsonPushQueue.push_back(nlohmann::json::diff(json_bak, _json));
+    _updateConVar.notify_all();
+
     push();
 }
 
@@ -207,7 +250,7 @@ std::string Password::getUsername() const
     std::shared_lock lock(_memberMutex);
 
 
-    _apiConVar.wait(lock, [this] { return _json.contains("username"); });
+    _updateConVar.wait(lock, [this] { return _json.contains("username"); });
 
     return _json.at("username");
 }
@@ -216,9 +259,13 @@ std::string Password::getUsername() const
 void Password::setUsername(const std::string& username)
 {
     std::unique_lock lock(_memberMutex);
+    nlohmann::json   json_bak = _json;
 
 
     _json["username"] = username;
+    _jsonPushQueue.push_back(nlohmann::json::diff(json_bak, _json));
+    _updateConVar.notify_all();
+
     push();
 }
 
@@ -228,7 +275,7 @@ std::string Password::getPassword() const
     std::shared_lock lock(_memberMutex);
 
 
-    _apiConVar.wait(lock, [this] { return _json.contains("password"); });
+    _updateConVar.wait(lock, [this] { return _json.contains("password"); });
 
     return _json.at("password");
 }
@@ -237,9 +284,14 @@ std::string Password::getPassword() const
 void Password::setPassword(const std::string& password)
 {
     std::unique_lock lock(_memberMutex);
+    nlohmann::json   json_bak = _json;
 
 
     _json["password"] = password;
+    _json["hash"]     = utils::SHA1(password);
+    _jsonPushQueue.push_back(nlohmann::json::diff(json_bak, _json));
+    _updateConVar.notify_all();
+
     push();
 }
 

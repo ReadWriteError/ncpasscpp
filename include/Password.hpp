@@ -33,7 +33,7 @@
 
 #include <chrono>
 #include <condition_variable>
-#include <queue>
+#include <deque>
 #include <shared_mutex>
 #include <string>
 #include <API_Implementor.hpp>
@@ -57,11 +57,11 @@ class NCPASSCPP_PUBLIC Password : public API_Implementor<Password>
 
     std::chrono::system_clock::time_point _lastSync; ///< The last time this password was synced with the server.
     nlohmann::json _json;                            ///< The JSON for the password.
-    std::queue<nlohmann::json> _jsonPushQueue;       ///< The queue for json patches to be sent to the server.
+    std::deque<nlohmann::json> _jsonPushQueue;       ///< The queue for json patches to be sent to the server.
 
-    mutable std::shared_mutex           _memberMutex; ///< The mutex used to lock any member variables of this instance. You must have _apiMutex and _memberMutex unique_locks to edit _json.
+    mutable std::shared_mutex           _memberMutex; ///< The mutex used to lock any member variables of this instance.
     mutable std::mutex                  _apiMutex;    ///< The mutex used to prevent 2 simultanious api calls. Never allow this to wait while you have a lock on _memberMutex or you will have a deadlock.
-    mutable std::condition_variable_any _apiConVar;   ///< Used to wait for the passwords constructor to finish its create API call.
+    mutable std::condition_variable_any _updateConVar;   ///< Used whenever the password is updated in any way.
 
 
   protected:
