@@ -1,18 +1,26 @@
 dbus_cpp_dep = dependency('dbus-c++-1', version: '>= 0.9.0')
 
 session_test1 = executable(
-  'session_test1', 'ncpasscpp_session_test1.cpp',
+  'test_session_1', 'test_session_1.cpp',
   include_directories : inc,
   dependencies : [dbus_cpp_dep],
   link_with : ncpasscpp
 )
 
 password_test1 = executable(
-  'password_test1', 'ncpasscpp_password_test1.cpp',
+  'test_password_1', 'test_password_1.cpp',
   include_directories : inc,
   dependencies : [dbus_cpp_dep],
   link_with : ncpasscpp
 )
 
-test('session test1', session_test1)
-test('password test1', password_test1)
+password_test2 = executable(
+  'test_password_2', 'test_password_2.cpp',
+  include_directories : inc,
+  dependencies : [dbus_cpp_dep],
+  link_with : ncpasscpp
+)
+
+test('session-creation', session_test1, suite: 'read')
+test('password-read', password_test1, suite: 'read')
+test('password-create', password_test2, suite: 'write')

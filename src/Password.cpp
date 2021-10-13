@@ -53,7 +53,8 @@ Password::Password(const std::shared_ptr<Session>& session, const nlohmann::json
 
               std::unique_lock memberLock(passwd->_memberMutex);
               {
-                  nlohmann::json currentPatch = nlohmann::json::diff("", json_bak);
+                  const nlohmann::json emptyJSON = nlohmann::json::parse("{}");
+                  nlohmann::json currentPatch    = nlohmann::json::diff(emptyJSON, json_bak);
 
                   for( nlohmann::json& patch : passwd->_jsonPushQueue )
                   {
@@ -66,13 +67,15 @@ Password::Password(const std::shared_ptr<Session>& session, const nlohmann::json
                           }
                       }
 
-                      currentPatch.merge_patch(patch);
+                      for( nlohmann::json& op : patch )
+                          currentPatch.push_back(op);
+
                       passwd->_jsonPushQueue.pop_front();
                   }
 
                 applyCurrentPatch:
 
-                  json_bak = nlohmann::json("").patch(currentPatch);
+                  json_bak = emptyJSON.patch(currentPatch);
               }
               memberLock.unlock();
 

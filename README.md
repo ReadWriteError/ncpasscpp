@@ -30,12 +30,12 @@ This is a third-party library.
 so far the following works:
 
   - Password
-    - [X] retrieve a password from the server using its UUID
-    - [ ] create a new password
+    - [x] retrieve a password from the server using its UUID
+    - [x] create a new password
     - [x] read properties
     - [ ] write properties
     - available properties
-      - id (read-only)
+      - id
       - label
       - username
       - password

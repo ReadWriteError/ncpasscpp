@@ -17,15 +17,13 @@
  */
 
 
-// Test for Password class
-// purpose: Read from all values of the password.
+// Test for Session class
+// purpose: Create Session object and verify its federated ID.
 
 #include <iostream>
-#include <Password.hpp>
 #include <sys/mman.h>
 #include <sys/prctl.h>
 #include <Session.hpp>
-#include <vector>
 #include "getDbusIDPass.cpp"
 #include "user-specific.hpp"
 
@@ -52,36 +50,36 @@ int main(int argc, char** argv)
     // print "true"/"false" for bools
     cout << boolalpha;
 
-    shared_ptr<ncpass::Session> session; // The Nextcloud Session to use for this test
+    vector<shared_ptr<ncpass::Session>> sessions; // A vector containing all of the nextcloud credentials available on this server.
 
 
     // How you get your "federatedIDs and passwords" or "usernames, rootServerURLs and passwords" is up to you and your application of this lib.
     // I'm getting this from the Gnome Online Accounts daemon over dbus.
-    // You can look in getDbusIDPass.hpp for how I do this (its kinda complicated).
+    // You can look in getDbusIDPass.hpp for how I do this (it's kinda complicated).
     for( array<string, 2> idPassArr : getDbusIDPass() ) // Gets a vector of string arrays containing { {federatedID, password}, {federatedID, password} } and loops through it.
+        sessions.push_back(ncpass::Session::create(idPassArr[0], idPassArr[1]));
+
+    bool didAllPass = true;
+
+
+    // Loop through credentials and verify each one.
+    for( shared_ptr<ncpass::Session> session : sessions )
     {
-        if( idPassArr[0] == TEST_PASSWORD_ACCOUNT ) // If the federatedID of this account is equal to our user specific variable.
-            session = ncpass::Session::create(idPassArr[0], idPassArr[1]);  // Create the account Session.
+        bool didTestPass = false;
+
+        for( string federatedID : TEST_SESSION_1_FEDERATEDIDS )
+        {
+            didTestPass = federatedID == session->getID();
+
+            if( didTestPass )
+                break;
+        }
+
+        if( didAllPass )
+            didAllPass = didTestPass;
+
+        cout << setw(TEST_WIDTH) << session->getID() + " expected? " << didTestPass << endl; // Print the federated ID and whether it passed the test.
     }
 
-    auto password = ncpass::Password::get(session, TEST_PASSWORD_UUID); // Create our password.
-
-    std::vector<bool> tests; // The results of all the tests.
-
-
-    // Print the tests and add them to the vector.
-    tests.push_back(false); cout << "ID pass?       " << (tests[0] = password->getID() == TEST_PASSWORD_UUID) << endl;
-    tests.push_back(false); cout << "Label pass?    " << (tests[1] = password->getLabel() == TEST_PASSWORD_LABEL) << endl;
-    tests.push_back(false); cout << "Username pass? " << (tests[2] = password->getUsername() == TEST_PASSWORD_USERNAME) << endl;
-    tests.push_back(false); cout << "Password pass? " << (tests[3] = password->getPassword() == TEST_PASSWORD_PASSWORD) << endl;
-
-
-    // return fail status if any tests failed
-    for( bool test : tests )
-    {
-        if( !test )
-            return 1;
-    }
-
-    return 0;
+    return !didAllPass;
 }
