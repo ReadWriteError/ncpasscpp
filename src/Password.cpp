@@ -57,22 +57,20 @@ Password::Password(const std::shared_ptr<Session>& session, const nlohmann::json
 
                   for( nlohmann::json& patch : passwd->_jsonPushQueue )
                   {
-                      bool applyPatch = true;
-
                       for( nlohmann::json& op : patch )
                       {
                           for( nlohmann::json& currentOP : currentPatch )
+                          {
                               if( op.at("path") == currentOP.at("path") )
-                                  applyPatch = false;
-
+                                  goto applyCurrentPatch;
+                          }
                       }
-
-                      if( !applyPatch )
-                          break;
 
                       currentPatch.merge_patch(patch);
                       passwd->_jsonPushQueue.pop_front();
                   }
+
+                applyCurrentPatch:
 
                   json_bak = nlohmann::json("").patch(currentPatch);
               }
@@ -130,21 +128,16 @@ void Password::pull()
               {
                   memberLock.lock();
 
-                  // detect changes
-                  if( !passwd->_json.contains("revision") || (json_new.at("revision") != passwd->_json.at("revision")))
-                  {
-                      // If there are no pending patches to push then write new revision.
-                      if( passwd->_jsonPushQueue.empty() )
-                      {
-                          passwd->_json = json_new;
-                          passwd->setPopulated();
-                      }
-                      // If current JSON doesn't contain "revision" then assume this is the first pull and apply any pending patches then write.
-                      else if( !passwd->_json.contains("revision") )
-                      {
-                          for( nlohmann::json& patch : passwd->_jsonPushQueue )
-                              json_new = json_new.patch(patch);
+                  // apply all pending patches to the new json
+                  for( nlohmann::json& patch : passwd->_jsonPushQueue )
+                      json_new = json_new.patch(patch);
 
+                  // detect changes
+                  if( passwd->_json != json_new )
+                  {
+                      // If there are no pending patches to push or the current JSON doesn't contain "revision" (meaning it's the first pull) then write new json
+                      if( passwd->_jsonPushQueue.empty() || !passwd->_json.contains("revision") )
+                      {
                           passwd->_json = json_new;
                           passwd->setPopulated();
                       }
