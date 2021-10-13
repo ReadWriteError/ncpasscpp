@@ -267,7 +267,7 @@ nlohmann::json API_Implementor<API_Type>::ncPATCH(const std::string& apiAction, 
     {
         curl_easy_setopt(curl, CURLOPT_CUSTOMREQUEST, "PATCH");
         curl_easy_setopt(curl, CURLOPT_POSTFIELDS, apiPatch.dump().c_str());
-        curl_easy_setopt(curl, CURLOPT_HTTPHEADER, "Content-Type: application/json");
+        curl_easy_setopt(curl, CURLOPT_HTTPHEADER, "Content-Type: application/json-patch+json");
 
         std::string buffer;
         curl_easy_setopt(
