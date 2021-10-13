@@ -124,7 +124,7 @@ void Password::pull()
               nlohmann::json json_new = passwd->ncPOST("show", { { "id", id } }); // Actual pull here.
 
               // Verify that json_new is valid and not an error code.
-              if( (json_new.value("id", "") == id) && (json_new.value("revision", "") != "") )
+              if( (json_new.value("id", "") == id) && json_new.contains("revision") )
               {
                   memberLock.lock();
 
@@ -135,13 +135,13 @@ void Password::pull()
                   // detect changes
                   if( passwd->_json != json_new )
                   {
-                      // If there are no pending patches to push or the current JSON doesn't contain "revision" (meaning it's the first pull) then write new json
-                      if( passwd->_jsonPushQueue.empty() || !passwd->_json.contains("revision") )
+                      // If there are no pending patches to push or the current JSON doesn't contain "revision" (meaning it's the first pull) or the 2 objects have the same "revision" UUID then write new json.
+                      if( passwd->_jsonPushQueue.empty() || !passwd->_json.contains("revision") || passwd->_json.at("revision") == json_new.at("revision") )
                       {
                           passwd->_json = json_new;
                           passwd->setPopulated();
                       }
-                      // If neither then we have a conflict.
+                      // If none of the above then we have a conflict.
                       else
                       {
                           //TODO: Register conflict here.
