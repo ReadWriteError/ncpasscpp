@@ -93,6 +93,11 @@ class NCPASSCPP_PUBLIC Password : public API_Implementor<Password>
     void sync();
 
     /**
+     * @brief Blocks the thread and waits for all pending changes to be pushed and any current API call to be completed.
+     */
+    void wait();
+
+    /**
      * @brief Creates a new password.
      * @param session A shared_ptr to a ncpass::Session instance. Used as credentials for the Nextcloud server's API.
      * @param label The label of the Password that you're creating.

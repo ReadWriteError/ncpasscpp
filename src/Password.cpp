@@ -136,7 +136,7 @@ void Password::pull()
                   if( passwd->_json != json_new )
                   {
                       // If there are no pending patches to push or the current JSON doesn't contain "revision" (meaning it's the first pull) or the 2 objects have the same "revision" UUID then write new json.
-                      if( passwd->_jsonPushQueue.empty() || !passwd->_json.contains("revision") || passwd->_json.at("revision") == json_new.at("revision") )
+                      if( passwd->_jsonPushQueue.empty() || !passwd->_json.contains("revision") || (passwd->_json.at("revision") == json_new.at("revision")) )
                       {
                           passwd->_json = json_new;
                           passwd->setPopulated();
@@ -169,6 +169,22 @@ void Password::push() {}
 
 
 void Password::sync() { pull(); }
+
+
+void Password::wait()
+{
+    std::unique_lock apiLock(_apiMutex);
+
+
+    _updateConVar.wait(
+      apiLock, [this]
+      {
+          std::shared_lock memberLock(_memberMutex);
+
+          return _jsonPushQueue.empty();
+      }
+      );
+}
 
 
 std::shared_ptr<Password> Password::create(const std::shared_ptr<Session>& session, const std::string& label, const std::string& password)
