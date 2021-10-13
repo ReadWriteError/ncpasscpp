@@ -16,7 +16,7 @@
  * along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
 
-#include <memory>
+#include <thread>
 #include <Session.hpp>
 #include "API_Implementor.cpp"
 
@@ -28,7 +28,8 @@ Session::Session(const std::string& username, const std::string& serverRoot, con
     _Base("session"),
     k_apiURL("https://" + serverRoot + (serverRoot.back() != '/' ? "/" : "") + "apps/passwords/api/1.0/"),
     k_federatedID(username + "@" + (serverRoot.back() != '/' ? serverRoot : serverRoot.substr(0, serverRoot.size() - 1))),
-    _usrPasswd(username + ":" + password)
+    k_username(username),
+    _password(password)
 {}
 
 
@@ -48,6 +49,20 @@ std::vector<std::shared_ptr<Session>> Session::getAllKnown() { return _Base::get
 
 
 std::string Session::getID() const { return k_federatedID; }
+
+
+void Session::setPassword(const std::string& password)
+{
+    std::thread t1([session = shared_from_this(), password] ()
+      {
+          std::unique_lock<std::shared_mutex> lock(session->_mutex);
+          session->_password = password;
+      }
+      );
+
+
+    t1.detach();
+}
 
 
 }

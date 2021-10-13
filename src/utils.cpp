@@ -16,6 +16,7 @@
  * along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
 
+#pragma once
 #include <iomanip>
 #include <sstream>
 #include <string>
@@ -26,7 +27,7 @@ namespace ncpass::utils
 {
 
 
-std::string SHA1(const std::string& input)
+static std::string SHA1(const std::string& input)
 {
     unsigned char pwdHash[SHA_DIGEST_LENGTH];
 

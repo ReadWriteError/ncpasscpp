@@ -108,7 +108,7 @@ This project uses meson as the build system.
 
   3. Install any dependencies of this project:
   ``` bash
-  sudo apt install libcurlpp-dev nlohmann-json3-dev libsodium-dev openssl
+  sudo apt install libcurl4 nlohmann-json3-dev libsodium-dev openssl
   [ -f "./test/user-specific.hpp" ] && sudo apt install libdbus-c++-dev   # extra dependency for the tests if enabled
   ```
 

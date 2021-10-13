@@ -16,18 +16,9 @@
  * along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
 
-#include <future>
-#include <memory>
-#include <shared_mutex>
-#include <sstream>
-#include <string>
-#include <type_traits>
+#include <atomic>
 #include <API_Implementor.hpp>
-#include <curlpp/cURLpp.hpp>
-#include <curlpp/Easy.hpp>
-#include <curlpp/Form.hpp>
-#include <curlpp/Options.hpp>
-#include <nlohmann/json.hpp>
+#include <curl/curl.h>
 #include <Session.hpp>
 
 
@@ -81,6 +72,12 @@ API_Implementor<API_Type>::API_Implementor(const std::string& apiPath) :
     k_apiPath(apiPath + "/")
 {
     static_assert(std::is_base_of<Session, API_Type>::value, "API_Implementor(const std::string& apiPath) can only be called from Session");
+
+    static std::atomic_flag notFirstSession = false;
+
+
+    if( !notFirstSession.test_and_set() )
+        curl_global_init(CURL_GLOBAL_ALL);
 }
 
 
@@ -199,35 +196,65 @@ bool API_Implementor<API_Type>::unregisterInstance()
 template <class API_Type>
 nlohmann::json API_Implementor<API_Type>::ncPOST(const std::string& apiAction, const nlohmann::json& apiArgs)
 {
-    curlpp::Cleanup cleaner;
-    curlpp::Easy    request;
-
-    nlohmann::json json;
-
-    std::shared_lock<std::shared_mutex> lock(k_session._mutex);
+    CURL*    curl;
+    CURLcode res;
 
 
-    request.setOpt(new curlpp::options::Url(k_session.k_apiURL + k_apiPath + apiAction));
-    request.setOpt(k_session._usrPasswd);
+    curl = curl_easy_init();
 
-    curlpp::Forms formParts;
-
-
-    for( auto&[key, value] : apiArgs.items() )
-        formParts.push_back(new curlpp::FormParts::Content(key, value));
-
-    request.setOpt(new curlpp::options::HttpPost(formParts));
-
-    std::stringstream output;
+    if( curl )
+    {
+        curl_easy_setopt(curl, CURLOPT_POST, 1L);
 
 
-    output << request;
+        std::string args;
 
-    lock.unlock();
+        for( auto&[key, value] : apiArgs.items() )
+        {
+            std::string valuestr = value.dump(-1, ' ', true);
 
-    json = nlohmann::json::parse(output.str());
+            if( (valuestr.front() == '"') && (valuestr.back() == '"'))
+                valuestr = valuestr.substr(1, valuestr.size() - 2);
 
-    return json;
+            args.append("&" + key + "=" + valuestr);
+        }
+
+        args.erase(args.begin());
+
+        curl_easy_setopt(curl, CURLOPT_POSTFIELDS, args.c_str());
+
+
+        std::string buffer;
+        curl_easy_setopt(
+          curl, CURLOPT_WRITEFUNCTION, +[] (void* contents, size_t size, size_t nmemb, void* userp)
+          {
+              ((std::string*)userp)->append((char*)contents, size * nmemb);
+
+              return size * nmemb;
+          }
+          );
+        curl_easy_setopt(curl, CURLOPT_WRITEDATA, &buffer);
+
+
+        std::shared_lock<std::shared_mutex> lock(k_session._mutex);
+
+        curl_easy_setopt(curl, CURLOPT_URL, (k_session.k_apiURL + k_apiPath + apiAction).c_str());
+
+        curl_easy_setopt(curl, CURLOPT_USERNAME, k_session.k_username.c_str());
+        curl_easy_setopt(curl, CURLOPT_PASSWORD, k_session._password.c_str());
+
+        res = curl_easy_perform(curl);
+
+        lock.unlock();
+
+        curl_easy_cleanup(curl);
+
+        nlohmann::json json = nlohmann::json::parse(buffer);
+
+        return json;
+    }
+
+    return "";
 }
 
 

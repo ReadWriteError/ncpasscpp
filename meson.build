@@ -9,7 +9,7 @@ lib_args = ['-DBUILDING_NCPASSCPP']
 
 #add_global_arguments('-DSOME_TOKEN=value', language : 'cpp')
 
-curlpp_dep = dependency('curlpp', version: '>= 0.8.1')
+curl_dep = dependency('libcurl', version: '>= 7.74.0')
 nlohmann_json_dep = dependency('nlohmann_json', version: '>= 3.9.1')
 libsodium_dep = dependency('libsodium', version: '>= 1.0.18')
 libssl_dep = dependency('openssl')

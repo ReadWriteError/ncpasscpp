@@ -31,11 +31,9 @@
     #endif
 #endif
 
-#include <memory>
 #include <shared_mutex>
 #include <string>
 #include <API_Implementor.hpp>
-#include <curlpp/Options.hpp>
 
 
 namespace ncpass
@@ -55,7 +53,8 @@ class NCPASSCPP_PUBLIC Session : public API_Implementor<Session>
 
     const std::string         k_apiURL;      ///< Base url to the api used to connect with the server (example: https://cloud.example.com/apps/passwords/api/1.0/).
     const std::string         k_federatedID; ///< The federated ID of the Nextcloud session.
-    curlpp::options::UserPwd  _usrPasswd;    ///< User and password curl options used for authenticating with the api.
+    const std::string         k_username;    ///< The username of the Nextcloud account.
+    std::string               _password;     ///< The password of the Nextcloud account.
     mutable std::shared_mutex _mutex;        ///< Mutex for this Session instance.
 
 
@@ -101,6 +100,12 @@ class NCPASSCPP_PUBLIC Session : public API_Implementor<Session>
      * @return The federated ID of the nextcloud user this Session is connected to.
      */
     std::string getID() const;
+
+    /**
+     * @brief Sets a new password to be used for authentication to the Nextcloud server.
+     * @param password The new password of this connection.
+     */
+    void setPassword(const std::string& password);
 
     template <class API_Type>
     friend class API_Implementor;
