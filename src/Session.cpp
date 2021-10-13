@@ -45,7 +45,7 @@ std::shared_ptr<Session> Session::create(const std::string& federatedID, const s
 }
 
 
-std::vector<std::shared_ptr<Session>> Session::getAllKnown() { return _Base::getRegistered(); }
+std::vector<std::shared_ptr<Session>> Session::getAll() { return _Base::getRegistered(); }
 
 
 std::string Session::getID() const { return k_federatedID; }

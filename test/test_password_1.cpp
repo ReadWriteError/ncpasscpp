@@ -65,7 +65,7 @@ int main(int argc, char** argv)
             session = ncpass::Session::create(idPassArr[0], idPassArr[1]);  // Create the account Session.
     }
 
-    auto password = ncpass::Password::get(session, TEST_PASSWORD_1_UUID); // Create our password.
+    auto password = ncpass::Password::fetch(session, TEST_PASSWORD_1_UUID); // Fetches our password.
 
     std::vector<bool> tests; // The results of all the tests.
 

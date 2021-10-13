@@ -94,7 +94,7 @@ class NCPASSCPP_PUBLIC Session : public API_Implementor<Session>
      * @return A vector containing all currently active instances.
      * @see ncpass::API_Implementor::getAllLocal()
      */
-    static std::vector<std::shared_ptr<Session>> getAllKnown();
+    static std::vector<std::shared_ptr<Session>> getAll();
 
     /**
      * @return The federated ID of the nextcloud user this Session is connected to.

@@ -70,8 +70,8 @@ Here is some example code that does this:
 auto session = ncpass::Session::create("user@cloud.example.com", "whydoialwaysforgetmypassword");
 
 // auto type is "shared_ptr<ncpass::Password>"
-// Here is where you get an existing password. You pass a Session and the UUID of the password you want to get.
-auto password = ncpass::Password::get(session, "xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx");
+// Here is where you fetch an existing password. You pass a Session and the UUID of the password you want to fetch.
+auto password = ncpass::Password::fetch(session, "xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx");
 
 // Print some before information.
 cout << "UUID:     " << password->getID()       << endl;

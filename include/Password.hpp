@@ -34,6 +34,7 @@
 #include <chrono>
 #include <condition_variable>
 #include <deque>
+#include <mutex>
 #include <shared_mutex>
 #include <string>
 #include <API_Implementor.hpp>
@@ -108,27 +109,27 @@ class NCPASSCPP_PUBLIC Password : public API_Implementor<Password>
     static std::shared_ptr<Password> create(const std::shared_ptr<Session>& session, const std::string& label, const std::string& password);
 
     /**
-     * @brief Gets a Password from the server based on the given ID.
+     * @brief Fetches a Password from the server based on the given ID.
      * @param session A shared_ptr to a ncpass::Session instance. Used as credentials for the Nextcloud server's API.
      * @param id The ID of an existing password on the nextcloud server.
      * @return A shared_ptr to the ncpass::Password instance of the given ID.
      * @see ncpass::Session
      */
-    static std::shared_ptr<Password> get(const std::shared_ptr<Session>& session, const std::string& id);
+    static std::shared_ptr<Password> fetch(const std::shared_ptr<Session>& session, const std::string& id);
 
     /**
      * @brief Gets all the passwords from the given Nextcloud server session asynchronously.
      * @param session A shared_ptr to a ncpass::Session instance. Used as credentials for the Nextcloud server's API.
      * @see ncpass::Session
      */
-    static void getAll(const std::shared_ptr<Session>& session);
+    static void fetchAll(const std::shared_ptr<Session>& session);
 
     /**
-     * @brief Gets all of the instances of the Password class.
-     * Does not create or sync with new passwords in nextcloud.
+     * @brief Gets all of the active instances of the Password class.
+     * This is a local only actionand does not create or sync with new passwords in nextcloud.
      * @return A vector containing all currently active instances.
      */
-    static std::vector<std::shared_ptr<Password>> getAllKnown();
+    static std::vector<std::shared_ptr<Password>> getAll();
 
     /**
      * @return The UUID of the password.

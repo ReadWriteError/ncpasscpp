@@ -202,7 +202,7 @@ std::shared_ptr<Password> Password::create(const std::shared_ptr<Session>& sessi
 }
 
 
-std::shared_ptr<Password> Password::get(const std::shared_ptr<Session>& session, const std::string& id)
+std::shared_ptr<Password> Password::fetch(const std::shared_ptr<Session>& session, const std::string& id)
 {
     nlohmann::json json;
 
@@ -218,7 +218,7 @@ std::shared_ptr<Password> Password::get(const std::shared_ptr<Session>& session,
 }
 
 
-std::vector<std::shared_ptr<Password>> Password::getAllKnown() { return _Base::getRegistered(); }
+std::vector<std::shared_ptr<Password>> Password::getAll() { return _Base::getRegistered(); }
 
 
 std::string Password::getID() const
