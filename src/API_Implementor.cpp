@@ -235,11 +235,54 @@ nlohmann::json API_Implementor<API_Type>::ncPOST(const std::string& apiAction, c
           );
         curl_easy_setopt(curl, CURLOPT_WRITEDATA, &buffer);
 
+        std::shared_lock<std::shared_mutex> lock(k_session._mutex);
+
+        curl_easy_setopt(curl, CURLOPT_URL, (k_session.k_apiURL + k_apiPath + apiAction).c_str());
+        curl_easy_setopt(curl, CURLOPT_USERNAME, k_session.k_username.c_str());
+        curl_easy_setopt(curl, CURLOPT_PASSWORD, k_session._password.c_str());
+
+        res = curl_easy_perform(curl);
+
+        lock.unlock();
+
+        curl_easy_cleanup(curl);
+
+        nlohmann::json json = nlohmann::json::parse(buffer);
+
+        return json;
+    }
+
+    return "";
+}
+template <class API_Type>
+nlohmann::json API_Implementor<API_Type>::ncPATCH(const std::string& apiAction, const nlohmann::json& apiPatch)
+{
+    CURL*    curl;
+    CURLcode res;
+
+
+    curl = curl_easy_init();
+
+    if( curl )
+    {
+        curl_easy_setopt(curl, CURLOPT_CUSTOMREQUEST, "PATCH");
+        curl_easy_setopt(curl, CURLOPT_POSTFIELDS, apiPatch.dump().c_str());
+        curl_easy_setopt(curl, CURLOPT_HTTPHEADER, "Content-Type: application/json");
+
+        std::string buffer;
+        curl_easy_setopt(
+          curl, CURLOPT_WRITEFUNCTION, +[] (void* contents, size_t size, size_t nmemb, void* userp)
+          {
+              ((std::string*)userp)->append((char*)contents, size * nmemb);
+
+              return size * nmemb;
+          }
+          );
+        curl_easy_setopt(curl, CURLOPT_WRITEDATA, &buffer);
 
         std::shared_lock<std::shared_mutex> lock(k_session._mutex);
 
         curl_easy_setopt(curl, CURLOPT_URL, (k_session.k_apiURL + k_apiPath + apiAction).c_str());
-
         curl_easy_setopt(curl, CURLOPT_USERNAME, k_session.k_username.c_str());
         curl_easy_setopt(curl, CURLOPT_PASSWORD, k_session._password.c_str());
 

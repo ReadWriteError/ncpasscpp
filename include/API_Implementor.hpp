@@ -157,6 +157,14 @@ class NCPASSCPP_PUBLIC API_Implementor : public std::enable_shared_from_this<API
      */
     nlohmann::json ncPOST(const std::string& apiAction, const nlohmann::json& apiArgs);
 
+    /**
+     * @brief Make a curl PATCH request.
+     * @param apiAction The final part of the API URL.
+     * @param apiPatch The PATCH request in JSON.
+     * @return The returning JSON of the call.
+     */
+    nlohmann::json ncPATCH(const std::string& apiAction, const nlohmann::json& apiPatch);
+
 
   public:
 
