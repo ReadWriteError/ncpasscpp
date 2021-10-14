@@ -10,8 +10,8 @@
 // Used to format output as an argument to std::setw().
 #define TEST_WIDTH 32
 
-// Enable or disable debugger (and any user level process) to be able to attach to the process and read passwords from RAM.
-#define TEST_ENABLE_DEBUGGER false
+// Enable the debugger (and any user level process) to be able to attach to the process and read passwords from RAM.
+//#define TEST_ENABLE_DEBUGGER
 
 
 
