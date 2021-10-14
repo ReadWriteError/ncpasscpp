@@ -99,6 +99,19 @@ class NCPASSCPP_PUBLIC API_Implementor : public std::enable_shared_from_this<API
     typedef API_Implementor<API_Type> _Base; ///< This class. Used for child classes.
 
     /**
+     * @brief All the supported HTTPS methods for API_Implementor::apiCall().
+     * @see API_Implementor::apiCall()
+     */
+    enum Methods
+    {
+        POST,
+        PATCH
+    };
+
+
+    constexpr const static char* strMethods[] = { "POST", "PATCH" }; ///< Used to get a C string from API_Implementor::Methods
+
+    /**
      * @brief Constructor for providing the Nextcloud server's credentials.
      * @param session A shared_ptr to a ncpass::Session instance used as credentials for the Nextcloud server's API.
      * @param apiPath The path to append to the URL (example: ncpass::Password would be "password").
@@ -150,20 +163,13 @@ class NCPASSCPP_PUBLIC API_Implementor : public std::enable_shared_from_this<API
     bool unregisterInstance();
 
     /**
-     * @brief Make a curl POST request.
+     * @brief Make a curl HTTPS call to the server.
+     * @param method The HTTPS method to use for the call.
      * @param apiAction The final part of the API URL.
      * @param apiArgs The arguments for the POST request in JSON. example JSON: { {"arg1", "value"}, {"arg2", "value"} }
      * @return The returning JSON of the call.
      */
-    nlohmann::json ncPOST(const std::string& apiAction, const nlohmann::json& apiArgs);
-
-    /**
-     * @brief Make a curl PATCH request.
-     * @param apiAction The final part of the API URL.
-     * @param apiPatch The PATCH request in JSON.
-     * @return The returning JSON of the call.
-     */
-    nlohmann::json ncPATCH(const std::string& apiAction, const nlohmann::json& apiPatch);
+    nlohmann::json apiCall(Methods method, const std::string& apiAction, const nlohmann::json& apiArgs);
 
 
   public:

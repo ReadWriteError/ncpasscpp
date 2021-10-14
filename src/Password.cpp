@@ -80,7 +80,7 @@ Password::Password(const std::shared_ptr<Session>& session, const nlohmann::json
               memberLock.unlock();
 
 
-              nlohmann::json json_new = passwd->ncPOST("create", json_bak);
+              nlohmann::json json_new = passwd->apiCall(POST, "create", json_bak);
 
 
               if( json_new.contains("id") && json_new.contains("revision") )
@@ -124,7 +124,7 @@ void Password::pull()
 
               memberLock.unlock();
 
-              nlohmann::json json_new = passwd->ncPOST("show", { { "id", id } }); // Actual pull here.
+              nlohmann::json json_new = passwd->apiCall(POST, "show", { { "id", id } }); // Actual pull here.
 
               // Verify that json_new is valid and not an error code.
               if( (json_new.value("id", "") == id) && json_new.contains("revision") )
