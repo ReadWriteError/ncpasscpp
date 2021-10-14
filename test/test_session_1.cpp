@@ -40,8 +40,7 @@ int main(int argc, char** argv)
     }
 
     // Disable access to this processes ram from non root users.
-    // This line needs to be commented out if you want to use a debugger.
-    prctl(PR_SET_DUMPABLE, false);
+    prctl(PR_SET_DUMPABLE, TEST_ENABLE_DEBUGGER);
 
     // Lock all the memory used by this program in ram so that they will never be writen to disk.
     // DISCLAMER: this does not stop memory being writen to the disk during hybernation.

@@ -20,8 +20,8 @@
 // Test for Password class
 // purpose: Read from all values of the password.
 
-#include <iostream>
 #include <iomanip>
+#include <iostream>
 #include <vector>
 #include <Password.hpp>
 #include <sys/mman.h>
@@ -60,21 +60,35 @@ int main(int argc, char** argv)
     // You can look in getDbusIDPass.hpp for how I do this (its kinda complicated).
     for( array<string, 2> idPassArr : getDbusIDPass() ) // Gets a vector of string arrays containing { {federatedID, password}, {federatedID, password} } and loops through it.
     {
-        if( idPassArr[0] == TEST_PASSWORD_1_ACCOUNT ) // If the federatedID of this account is equal to our user specific variable.
+        if( idPassArr[0] == TEST_PASSWORD_3_ACCOUNT ) // If the federatedID of this account is equal to our user specific variable.
             session = ncpass::Session::create(idPassArr[0], idPassArr[1]);  // Create the account Session.
     }
 
-    auto password = ncpass::Password::fetch(session, TEST_PASSWORD_1_UUID); // Fetches our password.
+    auto password = ncpass::Password::fetch(session, TEST_PASSWORD_3_UUID); // Fetches our password.
 
     std::vector<bool> tests; // The results of all the tests.
 
 
-    // Print the tests and add them to the vector.
-    tests.push_back(false); cout << setw(TEST_WIDTH) << "ID pass? "       << (tests.back() = password->getID() == TEST_PASSWORD_1_UUID) << endl;
-    tests.push_back(false); cout << setw(TEST_WIDTH) << "Label pass? "    << (tests.back() = password->getLabel() == TEST_PASSWORD_1_LABEL) << endl;
-    tests.push_back(false); cout << setw(TEST_WIDTH) << "Username pass? " << (tests.back() = password->getUsername() == TEST_PASSWORD_1_USERNAME) << endl;
-    tests.push_back(false); cout << setw(TEST_WIDTH) << "Password pass? " << (tests.back() = password->getPassword() == TEST_PASSWORD_1_PASSWORD) << endl;
+    tests.push_back(false); cout << setw(TEST_WIDTH) << "ID pass? "       << (tests.back() = password->getID() == TEST_PASSWORD_3_UUID) << endl;
 
+    password->setLabel(TEST_PASSWORD_3_LABEL_NEW);
+    password->setUsername(TEST_PASSWORD_3_USERNAME_NEW);
+    password->setPassword(TEST_PASSWORD_3_PASSWORD_NEW);
+
+    tests.push_back(false); cout << setw(TEST_WIDTH) << "Label pass? "    << (tests.back() = password->getLabel() == TEST_PASSWORD_3_LABEL_NEW) << endl;
+    tests.push_back(false); cout << setw(TEST_WIDTH) << "Username pass? " << (tests.back() = password->getUsername() == TEST_PASSWORD_3_USERNAME_NEW) << endl;
+    tests.push_back(false); cout << setw(TEST_WIDTH) << "Password pass? " << (tests.back() = password->getPassword() == TEST_PASSWORD_3_PASSWORD_NEW) << endl;
+
+    password->setLabel(TEST_PASSWORD_3_LABEL_OLD);
+    password->setUsername(TEST_PASSWORD_3_USERNAME_OLD);
+    password->setPassword(TEST_PASSWORD_3_PASSWORD_OLD);
+
+    // Print the tests and add them to the vector.
+    tests.push_back(false); cout << setw(TEST_WIDTH) << "Label pass? "    << (tests.back() = password->getLabel() == TEST_PASSWORD_3_LABEL_OLD) << endl;
+    tests.push_back(false); cout << setw(TEST_WIDTH) << "Username pass? " << (tests.back() = password->getUsername() == TEST_PASSWORD_3_USERNAME_OLD) << endl;
+    tests.push_back(false); cout << setw(TEST_WIDTH) << "Password pass? " << (tests.back() = password->getPassword() == TEST_PASSWORD_3_PASSWORD_OLD) << endl;
+
+    password->wait();
 
     // return fail status if any tests failed
     for( bool test : tests )

@@ -7,8 +7,11 @@
 // GlOBAL OPTIONS
 //*****************
 
-// Used to format output as an argument to std::setw()
+// Used to format output as an argument to std::setw().
 #define TEST_WIDTH 32
+
+// Enable or disable debugger (and any user level process) to be able to attach to the process and read passwords from RAM.
+#define TEST_ENABLE_DEBUGGER false
 
 
 
@@ -43,3 +46,13 @@ const std::string TEST_SESSION_1_FEDERATEDIDS[] = { "user@cloud.example.com", "u
 #define TEST_PASSWORD_2_USERNAME1 "Username revision1"
 #define TEST_PASSWORD_2_USERNAME2 "Username revision2"
 #define TEST_PASSWORD_2_PASSWORD "password123"
+
+//TEST 3 (read/write): The password with the following UUID will changed to the NEW values then reset to the OLD values.
+#define TEST_PASSWORD_3_ACCOUNT TEST_PASSWORD_GLOBAL_ACCOUNT
+#define TEST_PASSWORD_3_UUID "xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx"
+#define TEST_PASSWORD_3_LABEL_NEW "Password Label New"
+#define TEST_PASSWORD_3_LABEL_OLD "Password Label Old"
+#define TEST_PASSWORD_3_USERNAME_NEW "Password Username New"
+#define TEST_PASSWORD_3_USERNAME_OLD "Password Username Old"
+#define TEST_PASSWORD_3_PASSWORD_NEW "password123 New"
+#define TEST_PASSWORD_3_PASSWORD_OLD "password123 Old"

@@ -21,6 +21,14 @@ password_test2 = executable(
   link_with : ncpasscpp
 )
 
+password_test3 = executable(
+  'test_password_3', 'test_password_3.cpp',
+  include_directories : inc,
+  dependencies : [dbus_cpp_dep],
+  link_with : ncpasscpp
+)
+
 test('session-creation', session_test1, suite: 'read')
 test('password-read', password_test1, suite: 'read')
 test('password-create', password_test2, suite: 'write')
+test('password-edit', password_test3, suite: 'write', is_parallel: false)
