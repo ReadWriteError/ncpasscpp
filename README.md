@@ -21,8 +21,8 @@ This is a third-party library.
   - [x] Scopeless (Oooooo fancy word I just made up). This means that local objects are never deconstructed and can be retrieved later. That is unless they are specifically told to be deallocated.
   - [x] The current thread should never be blocked waiting for an API call to complete unless the developer requests to wait.
     - Only applies after the object is populated (so false values will not be reported).
-  - [ ] Any local changes to the password will be stored on the server at some point.
-    - Example: If there is a conflict and the user chooses the remote version, the local changes will be pushed to the remote. After that, the remote password will be reverted back to the original version the user choose.
+  - [x] Any local changes to the password will be stored on the server at some point.
+    - [ ] Example: If there is a conflict and the user chooses the remote version, the local changes will be pushed to the remote. After that, the remote password will be reverted back to the original version the user choose.
 
 
 ## OK so what API related stuff works so far?
@@ -33,7 +33,7 @@ so far the following works:
     - [x] retrieve a password from the server using its UUID
     - [x] create a new password
     - [x] read properties
-    - [ ] write properties
+    - [x] write properties
     - available properties
       - id
       - label

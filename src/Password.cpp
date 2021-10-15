@@ -195,7 +195,55 @@ void Password::pull()
 }
 
 
-void Password::push() {}
+void Password::push()
+{
+    std::thread t1(
+      [passwd = shared_from_this()] () {
+          std::this_thread::sleep_for(std::chrono::milliseconds(250));
+
+          {
+              std::shared_lock lock(passwd->_memberMutex);
+              passwd->_updateConVar.wait(lock, [passwd] { return passwd->_json.contains("revision"); });
+          }
+
+          std::unique_lock apiLock(passwd->_apiMutex);
+          std::unique_lock memberLock(passwd->_memberMutex);
+
+          if( !passwd->_jsonPushQueue.empty() )
+          {
+              nlohmann::json currentPatch = passwd->_json;
+
+              for( auto itr = passwd->_jsonPushQueue.rbegin(); itr != passwd->_jsonPushQueue.rend() - 1; itr++ )
+                  currentPatch = currentPatch.patch(*itr);
+
+              memberLock.unlock();
+
+
+              nlohmann::json json_new = passwd->apiCall(PATCH, "update", currentPatch);
+
+
+              if( (json_new.value("id", "") == currentPatch.at("id")) && json_new.contains("revision") )
+              {
+                  memberLock.lock();
+
+                  passwd->_json["revision"] = json_new.at("revision");
+
+                  passwd->_jsonPushQueue.pop_front();
+
+                  memberLock.unlock();
+                  passwd->_updateConVar.notify_all();
+              }
+              else
+              {
+                  //TODO: Implement failure action.
+              }
+          }
+      }
+      );
+
+
+    t1.detach();
+}
 
 
 void Password::sync()
