@@ -58,7 +58,7 @@ class NCPASSCPP_PUBLIC Password : public API_Implementor<Password>
 
     std::chrono::system_clock::time_point _lastSync; ///< The last time this password was synced with the server.
     nlohmann::json _json;                            ///< The most current JSON for the password.
-    std::deque<nlohmann::json> _jsonPushQueue;       ///< A queue of JSON patches so that API_Implementor::_json can be reverted to earlier uncommited versions.
+    std::deque<nlohmann::json> _jsonPushQueue;       ///< A queue of JSON patches so that API_Implementor::_json can be reverted to earlier unpushed versions.
 
     mutable std::shared_mutex           _memberMutex;  ///< The mutex used to lock any member variables of this instance.
     mutable std::mutex                  _apiMutex;     ///< The mutex used to prevent 2 simultanious api calls. Never allow this to wait while you have a lock on _memberMutex or you will have a deadlock.
