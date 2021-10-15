@@ -65,20 +65,11 @@ class NCPASSCPP_PUBLIC Password : public API_Implementor<Password>
     mutable std::condition_variable_any _updateConVar; ///< Used whenever the password is updated in any way.
 
     /**
-     * @brief Merges all the patches in the queue into proper revisions.
-     * @code
-     * [{ "op": "replace", "path": "/username", "value": "username1" }]
-     * [{ "op": "replace", "path": "/password", "value": "password1" }]
-     * [{ "op": "replace", "path": "/username", "value": "username2" }]
-     * [{ "op": "replace", "path": "/label", "value": "label1" }]
-     * @endcode
-     * merges into:
-     * @code
-     * [{ "op": "replace", "path": "/username", "value": "username1" }, { "op": "replace", "path": "/password", "value": "password1" }]
-     * [{ "op": "replace", "path": "/username", "value": "username2" }, { "op": "replace", "path": "/label", "value": "label1" }]
-     * @endcode
+     * @brief Used to register a change to the JSON.
+     * This will properly register the undo patch in the queue and apply the change to the json
+     * @param patch The JSON to be merged. (example: { "password": "I<3Penguins" })
      */
-    void consolidateQueue();
+    void setJsonPatch(nlohmann::json patch);
 
 
   protected:
