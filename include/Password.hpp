@@ -60,16 +60,9 @@ class NCPASSCPP_PUBLIC Password : public API_Implementor<Password>
     nlohmann::json _json;                            ///< The JSON for the password.
     std::deque<nlohmann::json> _jsonPushQueue;       ///< The queue for json patches to be sent to the server.
 
-    mutable std::shared_mutex           _memberMutex;  ///< The mutex used to lock any member variables of this instance.
-    mutable std::mutex                  _apiMutex;     ///< The mutex used to prevent 2 simultanious api calls. Never try to lock this while you have a lock on _memberMutex or you will have a deadlock.
-    mutable std::condition_variable_any _updateConVar; ///< Used whenever the password is updated in any way.
-
-    /**
-     * @brief Used to register a change to the JSON.
-     * This will properly register changes in the queue and apply them to the json
-     * @param patch The JSON to be merged. (example: { "password": "I<3Penguins" })
-     */
-    void setJsonPatch(const nlohmann::json& patch);
+    mutable std::shared_mutex           _memberMutex; ///< The mutex used to lock any member variables of this instance.
+    mutable std::mutex                  _apiMutex;    ///< The mutex used to prevent 2 simultanious api calls. Never allow this to wait while you have a lock on _memberMutex or you will have a deadlock.
+    mutable std::condition_variable_any _updateConVar;   ///< Used whenever the password is updated in any way.
 
 
   protected:
