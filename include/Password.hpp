@@ -57,12 +57,28 @@ class NCPASSCPP_PUBLIC Password : public API_Implementor<Password>
   private:
 
     std::chrono::system_clock::time_point _lastSync; ///< The last time this password was synced with the server.
-    nlohmann::json _json;                            ///< The JSON for the password.
-    std::deque<nlohmann::json> _jsonPushQueue;       ///< The queue for json patches to be sent to the server.
+    nlohmann::json _json;                            ///< The most current JSON for the password.
+    std::deque<nlohmann::json> _jsonPushQueue;       ///< A queue of JSON patches so that API_Implementor::_json can be reverted to earlier uncommited versions.
 
-    mutable std::shared_mutex           _memberMutex; ///< The mutex used to lock any member variables of this instance.
-    mutable std::mutex                  _apiMutex;    ///< The mutex used to prevent 2 simultanious api calls. Never allow this to wait while you have a lock on _memberMutex or you will have a deadlock.
-    mutable std::condition_variable_any _updateConVar;   ///< Used whenever the password is updated in any way.
+    mutable std::shared_mutex           _memberMutex;  ///< The mutex used to lock any member variables of this instance.
+    mutable std::mutex                  _apiMutex;     ///< The mutex used to prevent 2 simultanious api calls. Never allow this to wait while you have a lock on _memberMutex or you will have a deadlock.
+    mutable std::condition_variable_any _updateConVar; ///< Used whenever the password is updated in any way.
+
+    /**
+     * @brief Merges all the patches in the queue into proper revisions.
+     * @code
+     * [{ "op": "replace", "path": "/username", "value": "username1" }]
+     * [{ "op": "replace", "path": "/password", "value": "password1" }]
+     * [{ "op": "replace", "path": "/username", "value": "username2" }]
+     * [{ "op": "replace", "path": "/label", "value": "label1" }]
+     * @endcode
+     * merges into:
+     * @code
+     * [{ "op": "replace", "path": "/username", "value": "username1" }, { "op": "replace", "path": "/password", "value": "password1" }]
+     * [{ "op": "replace", "path": "/username", "value": "username2" }, { "op": "replace", "path": "/label", "value": "label1" }]
+     * @endcode
+     */
+    void consolidateQueue();
 
 
   protected:
