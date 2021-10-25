@@ -18,7 +18,6 @@
 
 #include <chrono>
 #include <memory>
-#include <mutex>
 #include <shared_mutex>
 #include <thread>
 #include <nlohmann/json.hpp>
@@ -160,8 +159,8 @@ void Password::pull()
                   {
                       for( const nlohmann::json& op : patch )
                       {
-                          if( json_new.contains(nlohmann::json::json_pointer(op.at("path"))) )
-                              json_new.erase(nlohmann::json::json_pointer(op.at("path")));
+                          if( json_new.contains(nlohmann::json::json_pointer(op.at("path").get_ref<const std::string&>())) )
+                              json_new.erase(nlohmann::json::json_pointer(op.at("path").get_ref<const std::string&>()));
                       }
                   }
 
